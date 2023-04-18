@@ -22,7 +22,7 @@ const Icon = styled.i`
   padding-right: 10px;
   position: relative;
   font-size: 1.5rem !important;
-  top: 1px;
+  top: 5px;
 `;
 
 interface SideBarButtonProps {

@@ -1,5 +1,4 @@
 import React, { FC } from "react";
-import SearchBar from "../Styled/SearchBar";
 import styled from "styled-components";
 import theme from "@client/utils/themes";
 

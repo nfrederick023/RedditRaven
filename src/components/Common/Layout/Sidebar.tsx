@@ -1,6 +1,4 @@
 import { useWindowWidth } from "@react-hook/window-size";
-import CategoryButton from "./CategoryButton";
-import ContrastText from "../Styled/ContrastText";
 import Gradient from "../Styled/Gradient";
 import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";

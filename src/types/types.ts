@@ -27,3 +27,5 @@ export enum AuthStatus {
   authenticated,
   notAuthenticated
 }
+
+export type Tags = "NSFW" | "OC" | "Spoiler";

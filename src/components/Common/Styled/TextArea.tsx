@@ -2,15 +2,13 @@ import React, { FC, useRef, useState } from "react";
 import styled from "styled-components";
 import theme from "@client/utils/themes";
 
-const SearchBarContent = styled.div`
+const TextAreaContent = styled.div`
   border: 1px solid ${theme.textContrast};
   color: ${theme.textContrast};
-  border-radius: 5px;
   display: flex;
   margin: auto;
-  padding: 5px;
-  max-height: 32px;
-  min-height: 32px;
+  border-radius: 5px;
+  height: inherit;
 
   ${(props: { isFocused: boolean }): string =>
     props.isFocused ? `border: 1px solid ${theme.text};` : ""}
@@ -20,13 +18,13 @@ const SearchBarContent = styled.div`
   }
 `;
 
-const SearchBarInput = styled.input`
+const TextAreaInput = styled.textarea`
   border: 0px;
   margin: 0px 0px 0px 2px;
   color: ${theme.text};
   background-color: rgba(0, 0, 0, 0);
+  resize: none;
   width: 100%;
-
   &:focus {
     outline: none;
   }
@@ -36,30 +34,20 @@ const SearchBarInput = styled.input`
   }
 `;
 
-const SearchIcon = styled.i`
-  font-size: 1.25rem !important;
-  margin-left: 5px;
-  padding-top: 1px;
-
-  &::before {
-    vertical-align: top;
-  }
-`;
-
-interface SearchBarProps {
-  onChange: (search: string) => void;
+interface TextAreaProps {
+  onChange: (text: string) => void;
   value: string;
 }
 
-const SearchBar: FC<SearchBarProps> = ({ onChange, value }: SearchBarProps) => {
+const TextArea: FC<TextAreaProps> = ({ onChange, value }: TextAreaProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const searchInput = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
 
-  const handleSearchClick = (): void => {
-    searchInput.current?.focus();
+  const handleClick = (): void => {
+    input.current?.focus();
   };
 
-  const handleInput = (e: React.FormEvent<HTMLInputElement>): void => {
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>): void => {
     onChange(e.currentTarget.value);
   };
 
@@ -72,24 +60,21 @@ const SearchBar: FC<SearchBarProps> = ({ onChange, value }: SearchBarProps) => {
   };
 
   return (
-    <SearchBarContent
-      onClick={handleSearchClick}
+    <TextAreaContent
+      onClick={handleClick}
       tabIndex={0}
       onFocus={onFocus}
       onBlur={onBlur}
       isFocused={isFocused}
     >
-      <SearchIcon className="bx bx-search" />
-      <SearchBarInput
-        ref={searchInput}
+      <TextAreaInput
+        ref={input}
         onChange={handleInput}
-        id="default-search"
-        placeholder="Search"
-        autoComplete="off"
+        placeholder="Comment"
         value={value}
       />
-    </SearchBarContent>
+    </TextAreaContent>
   );
 };
 
-export default SearchBar;
+export default TextArea;

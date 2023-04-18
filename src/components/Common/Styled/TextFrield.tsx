@@ -2,10 +2,9 @@ import React, { FC, useRef, useState } from "react";
 import styled from "styled-components";
 import theme from "@client/utils/themes";
 
-const SearchBarContent = styled.div`
-  border: 1px solid ${theme.textContrast};
+const TextFieldContent = styled.div`
+  border-bottom: 1px solid ${theme.textContrast};
   color: ${theme.textContrast};
-  border-radius: 5px;
   display: flex;
   margin: auto;
   padding: 5px;
@@ -13,14 +12,14 @@ const SearchBarContent = styled.div`
   min-height: 32px;
 
   ${(props: { isFocused: boolean }): string =>
-    props.isFocused ? `border: 1px solid ${theme.text};` : ""}
+    props.isFocused ? `border-bottom: 1px solid ${theme.text};` : ""}
 
   &:hover {
     cursor: text;
   }
 `;
 
-const SearchBarInput = styled.input`
+const TextFieldInput = styled.input`
   border: 0px;
   margin: 0px 0px 0px 2px;
   color: ${theme.text};
@@ -36,27 +35,17 @@ const SearchBarInput = styled.input`
   }
 `;
 
-const SearchIcon = styled.i`
-  font-size: 1.25rem !important;
-  margin-left: 5px;
-  padding-top: 1px;
-
-  &::before {
-    vertical-align: top;
-  }
-`;
-
-interface SearchBarProps {
-  onChange: (search: string) => void;
+interface TextFieldProps {
+  onChange: (text: string) => void;
   value: string;
 }
 
-const SearchBar: FC<SearchBarProps> = ({ onChange, value }: SearchBarProps) => {
+const TextField: FC<TextFieldProps> = ({ onChange, value }: TextFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const searchInput = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
-  const handleSearchClick = (): void => {
-    searchInput.current?.focus();
+  const handleClick = (): void => {
+    input.current?.focus();
   };
 
   const handleInput = (e: React.FormEvent<HTMLInputElement>): void => {
@@ -72,24 +61,21 @@ const SearchBar: FC<SearchBarProps> = ({ onChange, value }: SearchBarProps) => {
   };
 
   return (
-    <SearchBarContent
-      onClick={handleSearchClick}
+    <TextFieldContent
+      onClick={handleClick}
       tabIndex={0}
       onFocus={onFocus}
       onBlur={onBlur}
       isFocused={isFocused}
     >
-      <SearchIcon className="bx bx-search" />
-      <SearchBarInput
-        ref={searchInput}
+      <TextFieldInput
+        ref={input}
         onChange={handleInput}
-        id="default-search"
-        placeholder="Search"
-        autoComplete="off"
+        placeholder="Title"
         value={value}
       />
-    </SearchBarContent>
+    </TextFieldContent>
   );
 };
 
-export default SearchBar;
+export default TextField;

@@ -2,12 +2,16 @@ import React, { FC, useState } from "react";
 import styled from "styled-components";
 import theme from "@client/utils/themes";
 
+const SelectBoxWrapper = styled.div`
+  position: relative;
+`;
+
 const SelectBox = styled.div`
   border: 1px solid ${theme.textContrast};
   color: ${theme.textContrast};
   border-radius: 5px;
   box-shadow: 0 0 0 0px;
-  max-height: 32px;
+  padding: 4px 0px 0px 4px;
   min-height: 32px;
   display: flex;
 
@@ -38,6 +42,7 @@ const UnselectedBox = styled.div`
   margin-top: 10px;
   background-color: ${theme.backgroundContrast};
   border-radius: 5px;
+  z-index: 100;
 `;
 
 const UnselectedOption = styled.div`
@@ -56,13 +61,14 @@ const UnselectedOption = styled.div`
 const SelectedBox = styled.div`
   width: 95%;
   display: flex;
+  flex-wrap: wrap;
 `;
 
 const SelectedOption = styled.div`
   border: 1px solid ${theme.textContrast};
   border-radius: 5px;
-  margin: 4px 0px 4px 4px;
-  padding: 1px 0px 1px 6px;
+  margin: 0px 4px 4px 0px;
+  padding: 0px 0px 1px 6px;
   font-size: 85%;
 
   ${(props: { isMulti: boolean | undefined }): string =>
@@ -73,6 +79,10 @@ const SelectedIcon = styled.i`
   font-size: 110%;
   padding-top: 1px;
   margin-right: 3px;
+
+  ::before {
+    vertical-align: middle;
+  }
 `;
 
 const RightIcons = styled.i`
@@ -81,27 +91,30 @@ const RightIcons = styled.i`
 
   i {
     font-size: 1.25rem;
-    padding-top: 2px;
-    margin: 0px 3px 0px 3px;
+    margin: 1px 3px 0px 3px;
   }
 `;
 
 const ClearButton = styled.div`
   border-right: 1px solid ${theme.textContrast};
+  height: 85%;
 `;
 
 const PlaceHolderText = styled.div`
   margin: auto;
   margin-right: 0px;
   margin-left: 10px;
+  padding-bottom: 5px;
 `;
+
+type SelectOptions = string[] & string;
 
 interface SelectProps {
   options: string[];
   isMulti?: boolean;
   isClearable?: boolean;
   defaultSelected?: string;
-  onChange: (options: string[] | string) => void;
+  onChange: (options: SelectOptions) => void;
 }
 
 const Select: FC<SelectProps> = ({
@@ -119,10 +132,10 @@ const Select: FC<SelectProps> = ({
     let newOptions: string[];
     if (isMulti) {
       newOptions = [...selectedOptions, option];
-      onChange(newOptions);
+      onChange(newOptions as SelectOptions);
     } else {
       newOptions = [option];
-      onChange(option);
+      onChange(option as SelectOptions);
       setIsOpen(false);
     }
     setSelectedOptions(newOptions);
@@ -134,16 +147,20 @@ const Select: FC<SelectProps> = ({
       ...selectedOptions.filter((selectedOption) => selectedOption !== option),
     ];
     setSelectedOptions(newOptions);
-    onChange(newOptions);
+    onChange(newOptions as SelectOptions);
   };
 
   const handleRemoveAll = (e: React.MouseEvent): void => {
     e.stopPropagation();
     setSelectedOptions([]);
     if (isMulti) {
-      onChange([]);
+      onChange([] as string[] as SelectOptions);
     } else {
-      onChange(defaultSelected ? defaultSelected : "Select...");
+      onChange(
+        defaultSelected
+          ? (defaultSelected as SelectOptions)
+          : ("Select..." as SelectOptions)
+      );
     }
   };
 
@@ -174,7 +191,7 @@ const Select: FC<SelectProps> = ({
   );
 
   return (
-    <>
+    <SelectBoxWrapper>
       <SelectBox
         tabIndex={0}
         onClick={handleClick}
@@ -223,16 +240,22 @@ const Select: FC<SelectProps> = ({
           onMouseUp={mouseUp}
           onBlur={onBlur}
         >
-          {unselectedOptions.map((option, i) => {
-            return (
-              <UnselectedOption key={i} onClick={handleAddOption(option)}>
-                {option}
-              </UnselectedOption>
-            );
-          })}
+          {unselectedOptions.length ? (
+            <>
+              {unselectedOptions.map((option, i) => {
+                return (
+                  <UnselectedOption key={i} onClick={handleAddOption(option)}>
+                    {option}
+                  </UnselectedOption>
+                );
+              })}
+            </>
+          ) : (
+            <UnselectedOption>No Options</UnselectedOption>
+          )}
         </UnselectedBox>
       )}
-    </>
+    </SelectBoxWrapper>
   );
 };
 
