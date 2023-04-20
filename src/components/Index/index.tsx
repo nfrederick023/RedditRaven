@@ -140,7 +140,6 @@ const ApplyAllButton = styled.div`
 
 const InputFields = styled.div`
   margin: 8px 5px 0px 0px;
-
   width: 80%;
 `;
 
@@ -155,6 +154,52 @@ const GreyText = styled.div`
 const NoSearchResults = styled.div`
   padding: 6px 0px 6px 0px;
   color: ${theme.textContrast};
+`;
+
+const DateTimeWrapper = styled.div`
+  > div {
+    margin: 8px 5px 0px 0px;
+  }
+
+  div {
+    max-height: 30px;
+    height: 30px;
+    transition: all 0.1s ease-in;
+
+    &:hover {
+      fieldset {
+        border-color: ${theme.text}!important;
+      }
+    }
+  }
+  input {
+    max-height: 30px;
+    padding: 0px 5px;
+    color: ${theme.textContrast};
+    transition: all 0.1s ease-in;
+
+    &:hover {
+      color: ${theme.text};
+    }
+  }
+
+  button {
+    color: ${theme.textContrast} !important;
+    transition: all 0.1s ease-in;
+
+    &:hover {
+      color: ${theme.text};
+    }
+
+    svg {
+      width: 0.9em;
+      height: 0.9em;
+    }
+  }
+
+  fieldset {
+    border-color: ${theme.textContrast}!important;
+  }
 `;
 
 // interface PostDetails {
@@ -508,14 +553,16 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
             <NoSSR>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  defaultValue={dateTime}
-                  onChange={handleDateTimeChange}
-                />
-                <MobileTimePicker
-                  defaultValue={dateTime}
-                  onChange={handleDateTimeChange}
-                />
+                <DateTimeWrapper>
+                  <DatePicker
+                    defaultValue={dateTime}
+                    onChange={handleDateTimeChange}
+                  />
+                  <MobileTimePicker
+                    defaultValue={dateTime}
+                    onChange={handleDateTimeChange}
+                  />
+                </DateTimeWrapper>
               </LocalizationProvider>
             </NoSSR>
           </>

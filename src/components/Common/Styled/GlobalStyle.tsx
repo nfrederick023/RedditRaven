@@ -69,6 +69,36 @@ hr{
     font-size: large;
 }
 
+.MuiPickersDay-root, .MuiPickersYear-yearButton{
+  transition: all 0.1s ease-in;
+
+  &:hover {
+    background-color: ${theme.highlightLight} !important;
+  }
+}
+
+
+.MuiClockPointer-root, .MuiClock-pin, .MuiClockPointer-thumb, .MuiPickersDay-root.Mui-selected, .MuiPickersYear-yearButton.Mui-selected{
+  background-color: ${theme.highlightDark} !important;
+}
+
+
+.MuiClockPointer-thumb {
+  border-color: ${theme.highlightDark} !important;
+}
+.MuiPaper-root {
+    background-color: ${theme.backgroundContrast} !important;
+
+}
+
+ .MuiDialog-paper {
+    background-color: ${theme.background} !important;
+    box-shadow: 0px 0px 0px 0px !important;
+ }
+
+ .MuiTypography-root, .MuiClockNumber-root, .MuiSvgIcon-root, .MuiPickersFadeTransitionGroup-root, .MuiButtonBase-root {
+  color: ${theme.text} !important;
+ }
 `;
 
 export default GlobalStyle;
