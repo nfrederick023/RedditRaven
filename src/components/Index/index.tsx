@@ -4,6 +4,7 @@ import {
   LocalizationProvider,
   MobileTimePicker,
 } from "@mui/x-date-pickers";
+import { FileUpload } from "../Common/Styled/FileUpload";
 import { Subreddit, Tags } from "@client/types/types";
 import Gradient from "../Common/Styled/Gradient";
 import NoSSR from "@mpth/react-no-ssr";
@@ -18,6 +19,10 @@ import theme from "@client/utils/themes";
 
 const DashboardContent = styled.div`
   text-align: left;
+`;
+
+const Divider = styled.div`
+  margin-top: 5px;
 `;
 
 const Filter = styled.div`
@@ -87,12 +92,14 @@ const PageButton = styled.div`
 `;
 
 const ResultsPerPageWrapper = styled.div`
-  width: 60px;
+  width: 70px;
   margin-right: 3px;
 `;
 
 const CommentWrapper = styled.div`
-  width: 64px;
+  width: 100%;
+  height: 5em;
+  margin-top: 5px;
 `;
 
 const FlexWrapper = styled.div`
@@ -135,12 +142,17 @@ const DetailsTags = styled.div`
 
 const ApplyAllButton = styled.div`
   margin: 8px 5px 0px 0px;
-  width: 20%;
+  width: 15%;
 `;
 
 const InputFields = styled.div`
   margin: 8px 5px 0px 0px;
-  width: 80%;
+  width: 85%;
+`;
+
+const InputFieldMax = styled.div`
+  margin: 8px 5px 0px 0px;
+  width: 100%;
 `;
 
 const DetailsTitle = styled.div`
@@ -148,6 +160,12 @@ const DetailsTitle = styled.div`
 `;
 
 const GreyText = styled.div`
+  color: ${theme.textContrast};
+`;
+
+const NoSubreddits = styled.div`
+  margin-top: 5px;
+  margin-bottom: 5px;
   color: ${theme.textContrast};
 `;
 
@@ -202,12 +220,62 @@ const DateTimeWrapper = styled.div`
   }
 `;
 
+const ImageOptionsWrapper = styled.div`
+  width: 45%;
+`;
+
+const VerticleDivider = styled.div`
+  border-left: 1px solid ${theme.text};
+  width: 1px;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const FileUploadWrapper = styled.div`
+  border: 1px solid ${theme.textContrast};
+  border-radius: 5px;
+  margin: 5px;
+  height: 72px;
+
+  &:hover {
+    border-color: ${theme.text};
+  }
+`;
+
+const ImagePreview = styled.img`
+  margin: auto;
+  width: 30%;
+  margin-top: 10px;
+  border-radius: 15px;
+`;
+
+const Checkbox = styled.input`
+  margin-top: 20px;
+  accent-color: ${theme.highlightDark};
+`;
+
 // interface PostDetails {
 //   dateTime: number;
 //   imgLink: string;
 //   comment: string;
 //   posts: Post[];
 // }
+
+const getSoure = async (body: FormData): Promise<Response> => {
+  const response = await fetch("/api/sourceImage", {
+    method: "POST",
+    body,
+  });
+  return response;
+};
+
+const getLink = async (link: string): Promise<Response> => {
+  const response = await fetch("/api/sourceLink", {
+    method: "POST",
+    body: JSON.stringify({ link }),
+  });
+  return response;
+};
 
 interface Post {
   subreddit: Subreddit;
@@ -231,6 +299,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [globalTags, setGlobalTags] = useState<Tags[]>([]);
   const [comment, setComment] = useState("");
   const [dateTime, setDateTime] = useState(dayjs(new Date()));
+  const [link, setLink] = useState("");
+  const [imgurl, setImageUrl] = useState("");
+  const [preview, setPreview] = useState(true);
 
   const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
   const tagOptions: Tags[] = ["Spoiler", "NSFW", "OC"];
@@ -282,9 +353,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handleAddAll = (): void => {
     const newPosts: Post[] = [];
-    searchResultsSlice.forEach((subreddit) =>
-      newPosts.push(createPost(subreddit))
-    );
+    searchResults.forEach((subreddit) => newPosts.push(createPost(subreddit)));
     setPosts([...posts, ...newPosts]);
   };
 
@@ -355,25 +424,41 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleApplyAllTags = (): void => {
-    setPosts(
-      posts.map((post) => {
-        post.tags = globalTags;
-        return post;
-      })
-    );
+    const newPosts = posts.map((post) => {
+      post.tags = globalTags;
+      return post;
+    });
+
+    setPosts(newPosts);
+  };
+
+  const handleLinkChange = (newLink: string): void => {
+    getLink(newLink);
+    setLink(newLink);
   };
 
   const copyLink = (subredditName: string) => (): void => {
     navigator.clipboard.writeText(`https://www.reddit.com/r/${subredditName}`);
   };
 
+  const handleImageChange = async (file: File | undefined): Promise<void> => {
+    const body = new FormData();
+    if (file) {
+      body.append("file", file);
+
+      getSoure(body);
+    }
+    const image = await getLink("");
+
+    setImageUrl(URL.createObjectURL(await image.blob()));
+  };
+
+  const handlePreviewChange = (): void => {
+    setPreview(!preview);
+  };
   useEffect(() => {
     setSearchResults([...getSearchResults()]);
   }, [search, selectedCategories]);
-
-  const numberOfPages = Math.ceil(
-    searchResults.length / (resultsPerPage ? resultsPerPage : 1)
-  );
 
   let searchResultsSlice = searchResults;
 
@@ -395,14 +480,63 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       (categories = [...new Set([...categories, ...subreddit.categories])])
   );
 
+  const numberOfPages = Math.ceil(
+    (searchResults.length - posts.length) /
+      (resultsPerPage ? resultsPerPage : 1)
+  );
+
   if (currentPage !== 0 && currentPage > numberOfPages - 1)
     setCurrentPage(numberOfPages - 1);
 
   return (
     <>
       <h1>DASHBOARD</h1>
-
       <DashboardContent>
+        <Gradient type="text">
+          <h2>IMAGE</h2>
+        </Gradient>
+        <hr />
+        <FlexWrapper>
+          <ImageOptionsWrapper>
+            <h4>Pixiv Link</h4>
+            <InputFieldMax>
+              <TextField
+                onChange={handleLinkChange}
+                value={link}
+                placeholder="Link"
+              />
+            </InputFieldMax>
+            <label>
+              <Checkbox
+                type="checkbox"
+                checked={preview}
+                onChange={handlePreviewChange}
+              />
+              Display Image Preview
+            </label>
+          </ImageOptionsWrapper>
+          <VerticleDivider />
+          <ImageOptionsWrapper>
+            <h4>Upload</h4>
+            <FileUploadWrapper>
+              <FileUpload
+                onChange={(event): void => {
+                  handleImageChange(event.target.files?.[0]);
+                }}
+                onDrop={(event): void => {
+                  handleImageChange(event.dataTransfer.files?.[0]);
+                }}
+              />
+            </FileUploadWrapper>
+          </ImageOptionsWrapper>
+        </FlexWrapper>
+        <FlexWrapper>
+          {imgurl && preview ? (
+            <ImagePreview src={imgurl} style={{ maxHeight: "100%" }} />
+          ) : (
+            <></>
+          )}
+        </FlexWrapper>
         <Gradient type="text">
           <h2>SEARCH</h2>
         </Gradient>
@@ -417,6 +551,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             <Select
               options={categories}
               onChange={handleCategoryChange}
+              value={selectedCategories}
               isMulti
               isClearable
             />
@@ -439,6 +574,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             <Select
               options={resultsPerPageOptions}
               onChange={handleResultsPerPageChange}
+              value={resultsPerPage.toString()}
               defaultSelected={resultsPerPageOptions[2]}
             />
           </ResultsPerPageWrapper>
@@ -501,6 +637,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                         options={post.subreddit.info.flairs.map(
                           (flair) => flair.name
                         )}
+                        value={post.flair}
                         onChange={handleFlairChange(post.subreddit)}
                       />
                     ) : (
@@ -511,6 +648,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                     <Select
                       options={tagOptions}
                       onChange={handleTagChange(post.subreddit)}
+                      value={post.tags}
                       isMulti
                       isClearable
                     />
@@ -519,66 +657,72 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                     <TextField
                       onChange={handleTitleChange(post.subreddit)}
                       value={post.title}
+                      placeholder="Title"
                     />
                   </DetailsTitle>
                 </DetailsWrapper>
               );
             })}
-            <Icon onClick={handleRemoveAll()}>Remove All</Icon>
-
-            <FlexWrapper>
-              <ApplyAllButton>
-                <Icon onClick={handleApplyAllTitle}>Apply Title to All</Icon>
-              </ApplyAllButton>
-              <InputFields>
-                <TextField
-                  onChange={handleGlobalTitleChange}
-                  value={globalTitle}
-                />
-              </InputFields>
-            </FlexWrapper>
-            <FlexWrapper>
-              <ApplyAllButton>
-                <Icon onClick={handleApplyAllTags}>Apply Tags to All</Icon>
-              </ApplyAllButton>
-              <InputFields>
-                <Select
-                  options={tagOptions}
-                  onChange={handleGlobalTagsChange}
-                  isMulti
-                  isClearable
-                />
-              </InputFields>
-            </FlexWrapper>
-
-            <NoSSR>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateTimeWrapper>
-                  <DatePicker
-                    defaultValue={dateTime}
-                    onChange={handleDateTimeChange}
-                  />
-                  <MobileTimePicker
-                    defaultValue={dateTime}
-                    onChange={handleDateTimeChange}
-                  />
-                </DateTimeWrapper>
-              </LocalizationProvider>
-            </NoSSR>
           </>
         ) : (
-          <GreyText>No Subreddits Selected...</GreyText>
+          <NoSubreddits>No Subreddits Selected...</NoSubreddits>
         )}
-        <Gradient type="text">
-          <h2>IMAGE</h2>
-        </Gradient>
-        <hr />
-        <div>
-          <h3>Comment</h3>
-          <CommentWrapper>
-            <TextArea onChange={handleCommentChange} value={comment} />
-          </CommentWrapper>
-        </div>
+        <Icon onClick={handleRemoveAll()}>Remove All</Icon>
+        <FlexWrapper>
+          <ApplyAllButton>
+            <Icon onClick={handleApplyAllTitle}>Apply Title to All</Icon>
+          </ApplyAllButton>
+          <InputFields>
+            <TextField
+              onChange={handleGlobalTitleChange}
+              value={globalTitle}
+              placeholder="Title"
+            />
+          </InputFields>
+        </FlexWrapper>
+        <FlexWrapper>
+          <ApplyAllButton>
+            <Icon onClick={handleApplyAllTags}>Apply Tags to All</Icon>
+          </ApplyAllButton>
+          <InputFields>
+            <Select
+              options={tagOptions}
+              onChange={handleGlobalTagsChange}
+              value={globalTags}
+              isMulti
+              isClearable
+            />
+          </InputFields>
+        </FlexWrapper>
+        <Divider />
+        <h4>Comment</h4>
+        <CommentWrapper>
+          <TextArea onChange={handleCommentChange} value={comment} />
+        </CommentWrapper>
+        <FlexWrapper>
+          <ApplyAllButton>
+            <Icon onClick={handleApplyAllTags}>Add Source</Icon>
+          </ApplyAllButton>
+          <ApplyAllButton>
+            <Icon onClick={handleApplyAllTags}>Credit Artist</Icon>
+          </ApplyAllButton>
+        </FlexWrapper>
+        <Divider />
+        <h4>Date & Time</h4>
+        <NoSSR>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateTimeWrapper>
+              <DatePicker
+                defaultValue={dateTime}
+                onChange={handleDateTimeChange}
+              />
+              <MobileTimePicker
+                defaultValue={dateTime}
+                onChange={handleDateTimeChange}
+              />
+            </DateTimeWrapper>
+          </LocalizationProvider>
+        </NoSSR>
       </DashboardContent>
     </>
   );

@@ -67,7 +67,7 @@ const SelectedBox = styled.div`
 const SelectedOption = styled.div`
   border: 1px solid ${theme.textContrast};
   border-radius: 5px;
-  margin: 0px 4px 4px 0px;
+  margin: 1px 4px 4px 0px;
   padding: 0px 0px 1px 6px;
   font-size: 85%;
 
@@ -114,6 +114,7 @@ interface SelectProps {
   isMulti?: boolean;
   isClearable?: boolean;
   defaultSelected?: string;
+  value: string[] | string;
   onChange: (options: SelectOptions) => void;
 }
 
@@ -122,37 +123,41 @@ const Select: FC<SelectProps> = ({
   isMulti,
   isClearable,
   defaultSelected,
+  value,
   onChange,
 }: SelectProps) => {
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isUnselectedFocus, setIsUnselectedFocus] = useState(false);
   const handleAddOption = (option: string) => (e: React.MouseEvent) => {
     e.stopPropagation();
     let newOptions: string[];
     if (isMulti) {
-      newOptions = [...selectedOptions, option];
+      newOptions = [...(value as string[]), option];
       onChange(newOptions as SelectOptions);
     } else {
       newOptions = [option];
       onChange(option as SelectOptions);
       setIsOpen(false);
     }
-    setSelectedOptions(newOptions);
   };
 
   const handleRemoveOption = (option: string) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    const newOptions = [
-      ...selectedOptions.filter((selectedOption) => selectedOption !== option),
-    ];
-    setSelectedOptions(newOptions);
-    onChange(newOptions as SelectOptions);
+
+    if (isMulti) {
+      const newOptions = [
+        ...(value as string[]).filter(
+          (selectedOption) => selectedOption !== option
+        ),
+      ];
+      onChange(newOptions as SelectOptions);
+    } else {
+      onChange("" as SelectOptions);
+    }
   };
 
   const handleRemoveAll = (e: React.MouseEvent): void => {
     e.stopPropagation();
-    setSelectedOptions([]);
     if (isMulti) {
       onChange([] as string[] as SelectOptions);
     } else {
@@ -183,12 +188,7 @@ const Select: FC<SelectProps> = ({
     }
   };
 
-  if (!selectedOptions.length && defaultSelected)
-    setSelectedOptions([defaultSelected]);
-
-  const unselectedOptions = options.filter(
-    (option) => !selectedOptions.includes(option)
-  );
+  const unselectedOptions = options.filter((option) => !value.includes(option));
 
   return (
     <SelectBoxWrapper>
@@ -201,21 +201,27 @@ const Select: FC<SelectProps> = ({
         isFocused={isOpen}
       >
         <SelectedBox>
-          {selectedOptions.length ? (
+          {value.length ? (
             <>
-              {selectedOptions.map((selectedOption, i) => {
-                return (
-                  <SelectedOption key={i} isMulti={isMulti}>
-                    {selectedOption}
-                    {isMulti && (
-                      <SelectedIcon
-                        className="bx bx-x"
-                        onClick={handleRemoveOption(selectedOption)}
-                      ></SelectedIcon>
-                    )}
-                  </SelectedOption>
-                );
-              })}
+              {isMulti ? (
+                <>
+                  {(value as string[]).map((selectedOption, i) => {
+                    return (
+                      <SelectedOption key={i} isMulti={isMulti}>
+                        {selectedOption}
+                        {isMulti && (
+                          <SelectedIcon
+                            className="bx bx-x"
+                            onClick={handleRemoveOption(selectedOption)}
+                          ></SelectedIcon>
+                        )}
+                      </SelectedOption>
+                    );
+                  })}
+                </>
+              ) : (
+                <SelectedOption isMulti={isMulti}>{value}</SelectedOption>
+              )}
             </>
           ) : (
             <PlaceHolderText>Select...</PlaceHolderText>

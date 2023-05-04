@@ -13,6 +13,11 @@ input, textarea, select {
   font-size: inherit; 
 }
 
+// prevents content shift on scrollbar
+body {
+  width: calc(100vw - 15px);
+}
+
 // hide scrollbar on 100vh
 * {
     box-sizing: border-box;
@@ -98,6 +103,11 @@ hr{
 
  .MuiTypography-root, .MuiClockNumber-root, .MuiSvgIcon-root, .MuiPickersFadeTransitionGroup-root, .MuiButtonBase-root {
   color: ${theme.text} !important;
+ }
+
+ .MuiInputBase-input {
+  font-family: "Montserrat" !important;
+
  }
 `;
 

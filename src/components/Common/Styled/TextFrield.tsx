@@ -38,9 +38,14 @@ const TextFieldInput = styled.input`
 interface TextFieldProps {
   onChange: (text: string) => void;
   value: string;
+  placeholder: string;
 }
 
-const TextField: FC<TextFieldProps> = ({ onChange, value }: TextFieldProps) => {
+const TextField: FC<TextFieldProps> = ({
+  onChange,
+  value,
+  placeholder,
+}: TextFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
@@ -71,7 +76,7 @@ const TextField: FC<TextFieldProps> = ({ onChange, value }: TextFieldProps) => {
       <TextFieldInput
         ref={input}
         onChange={handleInput}
-        placeholder="Title"
+        placeholder={placeholder}
         value={value}
       />
     </TextFieldContent>

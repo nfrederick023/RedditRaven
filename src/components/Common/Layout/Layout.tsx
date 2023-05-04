@@ -17,7 +17,7 @@ const MainContent = styled.div`
 const ContentWrapper = styled.div`
   margin: 20px;
   width: 90%;
-  max-width: 1000px;
+  max-width: 1200px;
 `;
 
 interface LayoutProps {
