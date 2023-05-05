@@ -95,7 +95,14 @@ export const FileUpload: React.FC<FileUploadProps> = (
 
   return (
     <FileUploadWrapper isDragOver={isDragOver}>
-      <FileUploadInput onChange={handleChange} id="file-upload" type="file" />
+      <FileUploadInput
+        onChange={handleChange}
+        onClick={(event): void => {
+          event.currentTarget.value = "";
+        }}
+        id="file-upload"
+        type="file"
+      />
 
       <FileUploadLabel htmlFor="file-upload" {...dragEvents}>
         {(!imageButton || isDragOver || isMouseOver) && (

@@ -4,17 +4,12 @@ import { AuthStatus } from "../types/types";
 import { Cookies, CookiesProvider } from "react-cookie";
 import { ReactElement } from "react";
 import { Request } from "express";
-import {
-  ThemeProps,
-  ThemeProvider,
-  createGlobalStyle,
-} from "styled-components";
 import { getCookieDefault, getCookieSetOptions } from "../utils/cookies";
 import App from "next/app";
 import GlobalStyle from "@client/components/Common/Styled/GlobalStyle";
 import Layout from "../components/Common/Layout/Layout";
 import React from "react";
-import getAuthStatus from "../../server/utils/auth";
+import getAuthStatus from "@server/utils/auth";
 import getConfig from "next/config";
 const { publicRuntimeConfig } = getConfig();
 

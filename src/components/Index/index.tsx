@@ -5,7 +5,7 @@ import {
   MobileTimePicker,
 } from "@mui/x-date-pickers";
 import { FileUpload } from "../Common/Styled/FileUpload";
-import { Subreddit, Tags } from "@client/types/types";
+import { PixivDetails, Subreddit, Tags } from "@client/types/types";
 import Gradient from "../Common/Styled/Gradient";
 import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";
@@ -261,16 +261,24 @@ const Checkbox = styled.input`
 //   posts: Post[];
 // }
 
-const getSoure = async (body: FormData): Promise<Response> => {
+const getSource = async (body: FormData): Promise<PixivDetails | undefined> => {
   const response = await fetch("/api/sourceImage", {
     method: "POST",
     body,
   });
-  return response;
+  if (response.ok) return (await response.json()) as PixivDetails;
 };
 
-const getLink = async (link: string): Promise<Response> => {
+const getLink = async (link: string): Promise<PixivDetails | undefined> => {
   const response = await fetch("/api/sourceLink", {
+    method: "POST",
+    body: JSON.stringify({ link }),
+  });
+  if (response.ok) return (await response.json()) as PixivDetails;
+};
+
+const getImage = async (link: string): Promise<Response> => {
+  const response = await fetch("/api/loadImage", {
     method: "POST",
     body: JSON.stringify({ link }),
   });
@@ -302,6 +310,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [link, setLink] = useState("");
   const [imgurl, setImageUrl] = useState("");
   const [preview, setPreview] = useState(true);
+  const [pixivDetails, setPixivDetails] = useState<PixivDetails>();
 
   const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
   const tagOptions: Tags[] = ["Spoiler", "NSFW", "OC"];
@@ -432,9 +441,18 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     setPosts(newPosts);
   };
 
-  const handleLinkChange = (newLink: string): void => {
-    getLink(newLink);
+  const handleLinkChange = async (newLink: string): Promise<void> => {
     setLink(newLink);
+
+    if (
+      newLink.includes("https://www.pixiv.net/") &&
+      newLink.includes("/artworks/")
+    )
+      if (newLink.includes("#")) {
+        if (newLink.split("#")[1]) setPixivDetails(await getLink(newLink));
+      } else {
+        setPixivDetails(await getLink(newLink));
+      }
   };
 
   const copyLink = (subredditName: string) => (): void => {
@@ -445,20 +463,30 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     const body = new FormData();
     if (file) {
       body.append("file", file);
-
-      getSoure(body);
+      setPixivDetails(await getSource(body));
     }
-    const image = await getLink("");
-
-    setImageUrl(URL.createObjectURL(await image.blob()));
   };
 
   const handlePreviewChange = (): void => {
     setPreview(!preview);
   };
+
+  const updatePixivDetails = async (): Promise<void> => {
+    if (pixivDetails?.imageLink) {
+      const image = await getImage(pixivDetails.imageLink);
+      setImageUrl(URL.createObjectURL(await image.blob()));
+    } else {
+      setImageUrl("");
+    }
+  };
+
   useEffect(() => {
     setSearchResults([...getSearchResults()]);
   }, [search, selectedCategories]);
+
+  useEffect(() => {
+    updatePixivDetails();
+  }, [pixivDetails]);
 
   let searchResultsSlice = searchResults;
 

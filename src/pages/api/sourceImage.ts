@@ -1,8 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getPixivDetails } from "@server/api/getPixivDetails";
-import PersistentFile from "formidable/PersistentFile";
+import { PixivDetails } from "@client/types/types";
+import { creds } from "@server/utils/creds";
+import { getImageLink } from "@server/api/getPixivDetails";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//@ts-ignore
 import SauceNAO from "saucenao";
-import formidable from "formidable";
+import formidable, { File } from "formidable";
 import fs from "fs";
 
 interface SauceResult {
@@ -17,10 +20,10 @@ interface SauceResult {
   data: {
     ext_urls: string[];
     gelbooru_id: number;
-    creator: string;
+    member_name?: string;
+    member_id?: string;
     material: string;
     characters: string;
-    source: string;
     pixiv_id?: string;
   }
 }
@@ -29,26 +32,47 @@ interface Sauce {
   results: SauceResult[];
 }
 
-
 const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
   const form = new formidable.IncomingForm();
   form.parse(req, async (err, fields, files) => {
     if (err) throw err;
-    const filePath = (files.file as unknown as any).filepath;
+    const filePath = (files.file as File).filepath;
     const buffer = fs.readFileSync(filePath);
 
-    const apiKey = "93f82d5c46a57a853bbd1bded461747abd71de7b";
-    const mySauce = new SauceNAO(apiKey);
+    const mySauce = new SauceNAO(creds.saucenaoKey);
     const sauceMatches = (await mySauce(buffer)).json as Sauce;
-
     const sortedResults = sauceMatches.results.sort((a, b) => Number(b.header.similarity) - Number(a.header.similarity));
     const sauce = sortedResults.find(result => result.data.pixiv_id);
-
     if (sauce && sauce.data.pixiv_id) {
-      const frame = sauce.header.index_name.split(sauce.data.pixiv_id + "_p")[1].slice(0, 1);
-      await getPixivDetails(sauce.data.pixiv_id, frame);
-      res.status(200).send("Success!");
+
+      const pixivLink = sauce.data.ext_urls[0] || "";
+      const artistID = sauce.data.member_id || "";
+      const artistLink = artistID ? "https://www.pixiv.net/member.php?id=" + artistID : "";
+      const pixivID = sauce.data.pixiv_id || "";
+      const artist = sauce.data.member_name || "";
+
+      if (Number(sauce.header.similarity) < 85) {
+        res.status(400).send("No images were similar enough.");
+        return;
+      }
+
+      const frame = sauce.header.index_name.split(sauce.data.pixiv_id)[1].split(".")[0].slice(2);
+      const isNumericFrame = frame.match(/^[0-9]+$/) !== null;
+      const pixivDetails = await getImageLink(pixivID, isNumericFrame ? frame : "0");
+
+      const details: PixivDetails = {
+        imageLink: pixivDetails.imageLink,
+        artistLink,
+        pixivLink,
+        artistID,
+        pixivID,
+        artist,
+      };
+
+      if (details)
+        res.status(200).send(details);
+
     } else {
       res.status(400).send("The source could not be found.");
     }

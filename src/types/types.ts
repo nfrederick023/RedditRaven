@@ -28,4 +28,13 @@ export enum AuthStatus {
   notAuthenticated
 }
 
+export interface PixivDetails {
+  imageLink?: string;
+  pixivLink?: string;
+  artist?: string;
+  artistID?: string;
+  artistLink?: string;
+  pixivID?: string;
+}
+
 export type Tags = "NSFW" | "OC" | "Spoiler";
