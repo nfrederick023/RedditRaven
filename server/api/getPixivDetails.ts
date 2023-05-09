@@ -84,6 +84,7 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
     const artistID = res.body.userId;
     const artistLink = "https://www.pixiv.net/member.php?id=" + artistID;
     const pixivLink = "https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + pixivID;
+    const description = res.body.description;
 
     return {
       artist,
@@ -92,6 +93,7 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
       pixivID,
       pixivLink,
       imageLink,
+      description,
     };
   }
 

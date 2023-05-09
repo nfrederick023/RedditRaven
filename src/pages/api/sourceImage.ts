@@ -63,6 +63,7 @@ const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<v
 
       const details: PixivDetails = {
         imageLink: pixivDetails.imageLink,
+        description: pixivDetails.description,
         artistLink,
         pixivLink,
         artistID,

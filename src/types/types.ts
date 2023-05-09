@@ -35,6 +35,7 @@ export interface PixivDetails {
   artistID?: string;
   artistLink?: string;
   pixivID?: string;
+  description?: string;
 }
 
 export type Tags = "NSFW" | "OC" | "Spoiler";

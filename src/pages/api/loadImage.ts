@@ -54,7 +54,6 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     const contentType = responsePNG.headers.get("content-type") ?? "";
     res.setHeader("Content-Type", contentType);
     responsePNG.body?.pipe(res);
-    res.end();
     return;
   }
 

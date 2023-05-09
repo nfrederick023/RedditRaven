@@ -7,6 +7,7 @@ import {
 import { FileUpload } from "../Common/Styled/FileUpload";
 import { PixivDetails, Subreddit, Tags } from "@client/types/types";
 import Gradient from "../Common/Styled/Gradient";
+import Link from "next/link";
 import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";
 import SearchBar from "../Common/Styled/SearchBar";
@@ -142,12 +143,12 @@ const DetailsTags = styled.div`
 
 const ApplyAllButton = styled.div`
   margin: 8px 5px 0px 0px;
-  width: 15%;
+  width: 30%;
 `;
 
 const InputFields = styled.div`
   margin: 8px 5px 0px 0px;
-  width: 85%;
+  width: 70%;
 `;
 
 const InputFieldMax = styled.div`
@@ -242,10 +243,29 @@ const FileUploadWrapper = styled.div`
   }
 `;
 
-const ImagePreview = styled.img`
-  margin: auto;
-  width: 30%;
+const ImageDetails = styled.div`
+  width: 65%;
+  padding: 15px;
   margin-top: 10px;
+
+  div {
+    padding-top: 15px;
+    white-space: pre;
+  }
+`;
+
+const ImagePreviewWrapper = styled.div`
+  margin-top: 10px;
+  height: 40vh;
+  width: 35%;
+  border: 1px solid ${theme.textContrast};
+  border-radius: 15px;
+`;
+
+const ImagePreview = styled.img`
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
   border-radius: 15px;
 `;
 
@@ -558,13 +578,42 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             </FileUploadWrapper>
           </ImageOptionsWrapper>
         </FlexWrapper>
-        <FlexWrapper>
-          {imgurl && preview ? (
-            <ImagePreview src={imgurl} style={{ maxHeight: "100%" }} />
-          ) : (
-            <></>
-          )}
-        </FlexWrapper>
+        {preview ? (
+          <FlexWrapper>
+            <ImagePreviewWrapper>
+              {imgurl && <ImagePreview src={imgurl} />}
+            </ImagePreviewWrapper>
+            <ImageDetails>
+              <h4>Image Details</h4>
+              <hr />
+              <FlexWrapper>
+                <h4>Artist: </h4>
+                <Link href={pixivDetails?.artistLink || ""}>
+                  {pixivDetails?.artist || ""}
+                </Link>
+              </FlexWrapper>
+              <FlexWrapper>
+                <h4>PixivID: </h4>
+                <Link href={pixivDetails?.pixivLink || ""}>
+                  {pixivDetails?.pixivID || ""}
+                </Link>
+              </FlexWrapper>
+              <FlexWrapper>
+                <h4>Description: </h4>
+              </FlexWrapper>
+              {pixivDetails?.description?.substring(0, 100)}
+              {imgurl && (
+                <FlexWrapper>
+                  <Link href={pixivDetails?.imageLink || ""}>
+                    Link to Image
+                  </Link>
+                </FlexWrapper>
+              )}
+            </ImageDetails>
+          </FlexWrapper>
+        ) : (
+          <></>
+        )}
         <Gradient type="text">
           <h2>SEARCH</h2>
         </Gradient>
