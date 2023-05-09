@@ -61,6 +61,30 @@ hr{
   margin-bottom: 15px;
 }
 
+a {
+  text-decoration: none;
+}
+
+/* unvisited link */
+a:link {
+  color: ${theme.textContrast};
+}
+
+/* visited link */
+a:visited {
+  color: ${theme.textContrast};
+}
+
+/* mouse over link */
+a:hover {
+   color: ${theme.text};
+}
+
+/* selected link */
+a:active {
+  color: ${theme.highlightDark};
+}
+
 .sidebar-button {
     background: linear-gradient(to top right, #4481eb, #04befe);
     border: none;
