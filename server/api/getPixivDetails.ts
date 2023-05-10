@@ -1,4 +1,6 @@
+import * as https from "https";
 import { PixivDetails } from "@client/types/types";
+import fetch from "node-fetch";
 
 interface PixivImageTags {
   authorId: string;
@@ -80,13 +82,32 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
     else
       imageLink = "https://i.pximg.net/img-original" + masterUrl.split("custom-thumb")[1].split(pixivID)[0] + pixivID + "_p" + frame + "." + ext;
 
+    const agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+
+    const checkJPG = await fetch(
+      imageLink,
+      {
+        method: "GET",
+        agent,
+        referrer: "https://www.pixiv.net/",
+      }
+    );
+
+    if (!checkJPG.ok) {
+      imageLink = imageLink.split(".jpg")[0] + ".png";
+    }
+
     const artist = res.body.userName;
     const artistID = res.body.userId;
     const artistLink = "https://www.pixiv.net/member.php?id=" + artistID;
     const pixivLink = "https://www.pixiv.net/member_illust.php?mode=medium&illust_id=" + pixivID;
     const description = res.body.description;
+    const title = res.body.title;
 
     return {
+      title,
       artist,
       artistID,
       artistLink,

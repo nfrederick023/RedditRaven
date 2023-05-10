@@ -5,7 +5,13 @@ import {
   MobileTimePicker,
 } from "@mui/x-date-pickers";
 import { FileUpload } from "../Common/Styled/FileUpload";
-import { PixivDetails, Subreddit, Tags } from "@client/types/types";
+import {
+  PixivDetails,
+  Post,
+  PostTemplate,
+  Subreddit,
+  Tags,
+} from "@client/types/types";
 import Gradient from "../Common/Styled/Gradient";
 import Link from "next/link";
 import NoSSR from "@mpth/react-no-ssr";
@@ -45,13 +51,16 @@ const SearchResult = styled.div`
   display: flex;
   align-items: center;
   padding-bottom: 5px;
+
+  div {
+    margin-right: 5px;
+  }
 `;
 
 const Icon = styled.div`
   border: 1px solid ${theme.textContrast};
   border-radius: 5px;
   padding: 5px;
-  margin-right: 5px;
   transition: all 0.1s ease-in;
   user-select: none;
 
@@ -141,9 +150,20 @@ const DetailsTags = styled.div`
   }
 `;
 
-const ApplyAllButton = styled.div`
+const ButtonBase = styled.div`
   margin: 8px 5px 0px 0px;
-  width: 30%;
+`;
+
+const ApplyAllButton = styled(ButtonBase)`
+  width: 150px;
+`;
+
+const CreditButtons = styled(ButtonBase)``;
+
+const ClearButton = styled(ButtonBase)`
+  margin-left: auto;
+  margin-right: 0px;
+  width: 15%;
 `;
 
 const InputFields = styled.div`
@@ -274,13 +294,6 @@ const Checkbox = styled.input`
   accent-color: ${theme.highlightDark};
 `;
 
-// interface PostDetails {
-//   dateTime: number;
-//   imgLink: string;
-//   comment: string;
-//   posts: Post[];
-// }
-
 const getSource = async (body: FormData): Promise<PixivDetails | undefined> => {
   const response = await fetch("/api/sourceImage", {
     method: "POST",
@@ -305,12 +318,12 @@ const getImage = async (link: string): Promise<Response> => {
   return response;
 };
 
-interface Post {
-  subreddit: Subreddit;
-  flair: string;
-  tags: Tags[];
-  title: string;
-}
+const createRedditPost = async (post: Post): Promise<void> => {
+  const response = await fetch("/api/createPost", {
+    method: "POST",
+    body: JSON.stringify({ post }),
+  });
+};
 
 interface IndexPageProps {
   subreddits: Subreddit[];
@@ -322,11 +335,13 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [resultsPerPage, setResultsPerPage] = useState(5);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
   const [globalTitle, setGlobalTitle] = useState("");
   const [globalTags, setGlobalTags] = useState<Tags[]>([]);
   const [comment, setComment] = useState("");
-  const [dateTime, setDateTime] = useState(dayjs(new Date()));
+  const [dateTime, setDateTime] = useState(
+    dayjs(new Date()).add(30, "minutes")
+  );
   const [link, setLink] = useState("");
   const [imgurl, setImageUrl] = useState("");
   const [preview, setPreview] = useState(true);
@@ -351,7 +366,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     });
   };
 
-  const createPost = (subreddit: Subreddit): Post => {
+  const createPostTemplate = (subreddit: Subreddit): PostTemplate => {
     return {
       subreddit: subreddit,
       title: "",
@@ -377,23 +392,25 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleAddSubreddit = (subreddit: Subreddit) => (): void => {
-    setPosts([...posts, createPost(subreddit)]);
+    setPostTemplates([...postTemplates, createPostTemplate(subreddit)]);
   };
 
   const handleAddAll = (): void => {
-    const newPosts: Post[] = [];
-    searchResults.forEach((subreddit) => newPosts.push(createPost(subreddit)));
-    setPosts([...posts, ...newPosts]);
+    const newPosts: PostTemplate[] = [];
+    searchResults.forEach((subreddit) =>
+      newPosts.push(createPostTemplate(subreddit))
+    );
+    setPostTemplates([...postTemplates, ...newPosts]);
   };
 
   const handleRemoveAll = () => (): void => {
-    setPosts([]);
+    setPostTemplates([]);
   };
 
   const handleFlairChange = (subreddit: Subreddit) => {
     return (flair: string): void => {
-      setPosts(
-        posts.map((post) => {
+      setPostTemplates(
+        postTemplates.map((post) => {
           if (post.subreddit === subreddit) post.flair = flair;
           return post;
         })
@@ -403,8 +420,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handleTitleChange = (subreddit: Subreddit) => {
     return (title: string): void => {
-      setPosts(
-        posts.map((post) => {
+      setPostTemplates(
+        postTemplates.map((post) => {
           if (post.subreddit === subreddit) post.title = title;
           return post;
         })
@@ -414,8 +431,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handleTagChange = (subreddit: Subreddit) => {
     return (tags: string[]): void => {
-      setPosts(
-        posts.map((post) => {
+      setPostTemplates(
+        postTemplates.map((post) => {
           if (post.subreddit === subreddit) post.tags = tags as Tags[];
           return post;
         })
@@ -436,7 +453,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleRemoveSubreddit = (subreddit: Subreddit) => (): void => {
-    setPosts(posts.filter((post) => post.subreddit !== subreddit));
+    setPostTemplates(
+      postTemplates.filter((post) => post.subreddit !== subreddit)
+    );
   };
 
   const handleDateTimeChange = (date: Dayjs | null): void => {
@@ -444,8 +463,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleApplyAllTitle = (): void => {
-    setPosts(
-      posts.map((post) => {
+    setPostTemplates(
+      postTemplates.map((post) => {
         post.title = globalTitle;
         return post;
       })
@@ -453,12 +472,12 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleApplyAllTags = (): void => {
-    const newPosts = posts.map((post) => {
+    const newPosts = postTemplates.map((post) => {
       post.tags = globalTags;
       return post;
     });
 
-    setPosts(newPosts);
+    setPostTemplates(newPosts);
   };
 
   const handleLinkChange = async (newLink: string): Promise<void> => {
@@ -500,6 +519,55 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     }
   };
 
+  const handleCreditArtist = (): void => {
+    setComment(comment + `\n\nArt by: ${pixivDetails?.artist}`);
+  };
+
+  const handleAddSource = (): void => {
+    setComment(comment + `[Source](${pixivDetails?.pixivLink})`);
+  };
+
+  const handleClearComment = (): void => {
+    setComment("");
+  };
+
+  const createPost = (): void => {
+    // check all required fields
+
+    for (const postTemplate of postTemplates) {
+      if (!postTemplate.title) {
+        alert(`Subreddit: ${postTemplate.subreddit.name} is missing a title!`);
+        return;
+      }
+    }
+
+    if (!postTemplates.length) {
+      alert("You must select at least one subreddit!");
+      return;
+    }
+
+    if (!pixivDetails || !pixivDetails.imageLink) {
+      alert("You must provide an image before making a post!");
+      return;
+    }
+
+    if (dateTime.toDate().getTime() < Date.now()) {
+      alert(
+        "The time selected is in the past. Please select a different time!"
+      );
+      return;
+    }
+
+    const post: Post = {
+      postDetails: postTemplates,
+      imageLink: pixivDetails.imageLink,
+      dateTimeMS: dateTime.toDate().getTime(),
+      comment,
+    };
+
+    createRedditPost(post);
+  };
+
   useEffect(() => {
     setSearchResults([...getSearchResults()]);
   }, [search, selectedCategories]);
@@ -510,7 +578,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   let searchResultsSlice = searchResults;
 
-  posts.forEach((post) => {
+  postTemplates.forEach((post) => {
     searchResultsSlice = searchResultsSlice.filter(
       (result) => result !== post.subreddit
     );
@@ -529,7 +597,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   );
 
   const numberOfPages = Math.ceil(
-    (searchResults.length - posts.length) /
+    (searchResults.length - postTemplates.length) /
       (resultsPerPage ? resultsPerPage : 1)
   );
 
@@ -597,6 +665,10 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                 <Link href={pixivDetails?.pixivLink || ""}>
                   {pixivDetails?.pixivID || ""}
                 </Link>
+              </FlexWrapper>
+              <FlexWrapper>
+                <h4>Title: </h4>
+                {pixivDetails?.title || ""}
               </FlexWrapper>
               <FlexWrapper>
                 <h4>Description: </h4>
@@ -696,9 +768,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             <h4>Title</h4>
           </DetailsTitle>
         </FlexWrapper>
-        {posts.length ? (
+        {postTemplates.length ? (
           <>
-            {posts.map((post, i) => {
+            {postTemplates.map((post, i) => {
               return (
                 <DetailsWrapper key={i}>
                   <DetailsSubreddit>
@@ -777,12 +849,15 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           <TextArea onChange={handleCommentChange} value={comment} />
         </CommentWrapper>
         <FlexWrapper>
-          <ApplyAllButton>
-            <Icon onClick={handleApplyAllTags}>Add Source</Icon>
-          </ApplyAllButton>
-          <ApplyAllButton>
-            <Icon onClick={handleApplyAllTags}>Credit Artist</Icon>
-          </ApplyAllButton>
+          <CreditButtons>
+            <Icon onClick={handleAddSource}>Add Source</Icon>
+          </CreditButtons>
+          <CreditButtons>
+            <Icon onClick={handleCreditArtist}>Credit Artist</Icon>
+          </CreditButtons>
+          <ClearButton>
+            <Icon onClick={handleClearComment}>Clear</Icon>
+          </ClearButton>
         </FlexWrapper>
         <Divider />
         <h4>Date & Time</h4>
@@ -791,15 +866,20 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             <DateTimeWrapper>
               <DatePicker
                 defaultValue={dateTime}
+                minDate={dayjs(Date.now())}
                 onChange={handleDateTimeChange}
               />
               <MobileTimePicker
                 defaultValue={dateTime}
+                minTime={dayjs(Date.now())}
                 onChange={handleDateTimeChange}
               />
             </DateTimeWrapper>
           </LocalizationProvider>
         </NoSSR>
+        <CreditButtons>
+          <Icon onClick={createPost}>Create Post</Icon>
+        </CreditButtons>
       </DashboardContent>
     </>
   );

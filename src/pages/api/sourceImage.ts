@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { PixivDetails } from "@client/types/types";
-import { creds } from "@server/utils/creds";
+import { creds } from "@server/credentials/creds";
 import { getImageLink } from "@server/api/getPixivDetails";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
@@ -40,7 +40,7 @@ const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<v
     const filePath = (files.file as File).filepath;
     const buffer = fs.readFileSync(filePath);
 
-    const mySauce = new SauceNAO(creds.saucenaoKey);
+    const mySauce = new SauceNAO(creds.SAUCENAO_KEY);
     const sauceMatches = (await mySauce(buffer)).json as Sauce;
     const sortedResults = sauceMatches.results.sort((a, b) => Number(b.header.similarity) - Number(a.header.similarity));
     const sauce = sortedResults.find(result => result.data.pixiv_id);
@@ -64,6 +64,7 @@ const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<v
       const details: PixivDetails = {
         imageLink: pixivDetails.imageLink,
         description: pixivDetails.description,
+        title: pixivDetails.title,
         artistLink,
         pixivLink,
         artistID,

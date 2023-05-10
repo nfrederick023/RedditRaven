@@ -36,6 +36,21 @@ export interface PixivDetails {
   artistLink?: string;
   pixivID?: string;
   description?: string;
+  title?: string;
+}
+
+export interface Post {
+  postDetails: PostTemplate[];
+  comment: string;
+  imageLink: string;
+  dateTimeMS: number;
+}
+
+export interface PostTemplate {
+  subreddit: Subreddit;
+  flair: string;
+  tags: Tags[];
+  title: string;
 }
 
 export type Tags = "NSFW" | "OC" | "Spoiler";

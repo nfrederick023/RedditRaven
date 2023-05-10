@@ -24,7 +24,7 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     rejectUnauthorized: false,
   });
 
-  const responseJPG = await fetch(
+  const response = await fetch(
     link,
     {
       method: "GET",
@@ -33,31 +33,14 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     }
   );
 
-  if (responseJPG.ok) {
-    const contentType = responseJPG.headers.get("content-type") ?? "";
+  if (response.ok) {
+    const contentType = response.headers.get("content-type") ?? "";
     res.setHeader("Content-Type", contentType);
-    responseJPG.body?.pipe(res);
+    response.body?.pipe(res);
     return;
   }
 
-  const convertedPNGLink = link.split(".jpg")[0] + ".png";
-  const responsePNG = await fetch(
-    convertedPNGLink,
-    {
-      method: "GET",
-      agent,
-      referrer: "https://www.pixiv.net/",
-    }
-  );
-
-  if (responsePNG.ok) {
-    const contentType = responsePNG.headers.get("content-type") ?? "";
-    res.setHeader("Content-Type", contentType);
-    responsePNG.body?.pipe(res);
-    return;
-  }
-
-  res.status(500).json({ message: "Could not find an image. Error code from Pixiv: " + responsePNG.status });
+  res.status(500).json({ message: "Could not find an image. Error code from Pixiv: " + response.status });
 };
 
 export default sourceLink;
