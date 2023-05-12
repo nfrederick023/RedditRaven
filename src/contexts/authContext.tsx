@@ -1,4 +1,4 @@
-import { AuthStatus } from "../types/types";
+import { AuthStatus } from "../utils/types";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import React from "react";

@@ -3,8 +3,8 @@ import styled from "styled-components";
 import theme from "@client/utils/themes";
 
 const TextFieldContent = styled.div`
-  border-bottom: 1px solid ${theme.textContrast};
-  color: ${theme.textContrast};
+  border-bottom: 1px solid ${(p): string => p.theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
   display: flex;
   margin: auto;
   padding: 5px;
@@ -12,7 +12,9 @@ const TextFieldContent = styled.div`
   min-height: 32px;
 
   ${(props: { isFocused: boolean }): string =>
-    props.isFocused ? `border-bottom: 1px solid ${theme.text};` : ""}
+    props.isFocused
+      ? `border-bottom: 1px solid ${(p): string => p.theme.text};`
+      : ""}
 
   &:hover {
     cursor: text;
@@ -22,7 +24,7 @@ const TextFieldContent = styled.div`
 const TextFieldInput = styled.input`
   border: 0px;
   margin: 0px 0px 0px 2px;
-  color: ${theme.text};
+  color: ${(p): string => p.theme.text};
   background-color: rgba(0, 0, 0, 0);
   width: 100%;
 
@@ -31,7 +33,7 @@ const TextFieldInput = styled.input`
   }
 
   ::placeholder {
-    color: ${theme.textContrast};
+    color: ${(p): string => p.theme.textContrast};
   }
 `;
 

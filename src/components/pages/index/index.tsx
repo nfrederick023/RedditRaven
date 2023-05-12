@@ -4,25 +4,24 @@ import {
   LocalizationProvider,
   MobileTimePicker,
 } from "@mui/x-date-pickers";
-import { FileUpload } from "../Common/Styled/FileUpload";
+import { FileUpload } from "@client/components/common/shared/file-upload";
 import {
   PixivDetails,
   Post,
   PostTemplate,
   Subreddit,
   Tags,
-} from "@client/types/types";
-import Gradient from "../Common/Styled/Gradient";
+} from "@client/utils/types";
+import Gradient from "@client/components/common/shared/gradient";
 import Link from "next/link";
 import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";
-import SearchBar from "../Common/Styled/SearchBar";
-import Select from "../Common/Styled/Select";
-import TextArea from "../Common/Styled/TextArea";
-import TextField from "../Common/Styled/TextFrield";
+import Select from "@client/components/common/shared/select";
+import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
+import TextArea from "@client/components/common/shared/text-area";
+import TextField from "@client/components/common/shared/text-field";
 import dayjs, { Dayjs } from "dayjs";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const DashboardContent = styled.div`
   text-align: left;
@@ -30,21 +29,6 @@ const DashboardContent = styled.div`
 
 const Divider = styled.div`
   margin-top: 5px;
-`;
-
-const Filter = styled.div`
-  display: flex;
-  width: 100%;
-  margin-bottom: 10px;
-`;
-
-const FilterName = styled.div`
-  width: 40%;
-  padding-right: 10px;
-`;
-
-const FilterCategory = styled.div`
-  width: 60%;
 `;
 
 const SearchResult = styled.div`
@@ -58,52 +42,19 @@ const SearchResult = styled.div`
 `;
 
 const Icon = styled.div`
-  border: 1px solid ${theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.textContrast};
   border-radius: 5px;
   padding: 5px;
   transition: all 0.1s ease-in;
   user-select: none;
 
-  color: ${theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
 
   &:hover {
     cursor: pointer;
-    border-color: ${theme.text};
-    color: ${theme.text};
+    border-color: ${(p): string => p.theme.text};
+    color: ${(p): string => p.theme.text};
   }
-`;
-
-const PageButtonContainer = styled.div`
-  display: flex;
-  margin-bottom: 3px;
-`;
-
-const PageButton = styled.div`
-  color: ${theme.textContrast};
-  width: 32px;
-  height: 32px;
-  border: 1px solid ${theme.textContrast};
-  border-radius: 5px;
-  text-align: center;
-  display: grid;
-  margin-right: 3px;
-  align-content: center;
-  user-select: none;
-
-  &:hover {
-    cursor: pointer;
-    border: 1px solid ${theme.text};
-    color: ${theme.text};
-  }
-  ${(props: { isSelected: boolean }): string =>
-    props.isSelected
-      ? `border: 1px solid ${theme.text}; color: ${theme.text};`
-      : ""};
-`;
-
-const ResultsPerPageWrapper = styled.div`
-  width: 70px;
-  margin-right: 3px;
 `;
 
 const CommentWrapper = styled.div`
@@ -130,6 +81,10 @@ const DetailsSubreddit = styled.div`
   align-items: center;
   display: flex;
   overflow: hidden;
+
+  div {
+    margin-right: 5px;
+  }
 `;
 
 const DetailsFlair = styled.div`
@@ -181,18 +136,18 @@ const DetailsTitle = styled.div`
 `;
 
 const GreyText = styled.div`
-  color: ${theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
 `;
 
 const NoSubreddits = styled.div`
   margin-top: 5px;
   margin-bottom: 5px;
-  color: ${theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
 `;
 
 const NoSearchResults = styled.div`
   padding: 6px 0px 6px 0px;
-  color: ${theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
 `;
 
 const DateTimeWrapper = styled.div`
@@ -207,27 +162,27 @@ const DateTimeWrapper = styled.div`
 
     &:hover {
       fieldset {
-        border-color: ${theme.text}!important;
+        border-color: ${(p): string => p.theme.text}!important;
       }
     }
   }
   input {
     max-height: 30px;
     padding: 0px 5px;
-    color: ${theme.textContrast};
+    color: ${(p): string => p.theme.textContrast};
     transition: all 0.1s ease-in;
 
     &:hover {
-      color: ${theme.text};
+      color: ${(p): string => p.theme.text};
     }
   }
 
   button {
-    color: ${theme.textContrast} !important;
+    color: ${(p): string => p.theme.textContrast} !important;
     transition: all 0.1s ease-in;
 
     &:hover {
-      color: ${theme.text};
+      color: ${(p): string => p.theme.text};
     }
 
     svg {
@@ -237,7 +192,7 @@ const DateTimeWrapper = styled.div`
   }
 
   fieldset {
-    border-color: ${theme.textContrast}!important;
+    border-color: ${(p): string => p.theme.textContrast}!important;
   }
 `;
 
@@ -246,20 +201,20 @@ const ImageOptionsWrapper = styled.div`
 `;
 
 const VerticleDivider = styled.div`
-  border-left: 1px solid ${theme.text};
+  border-left: 1px solid ${(p): string => p.theme.text};
   width: 1px;
   margin-left: auto;
   margin-right: auto;
 `;
 
 const FileUploadWrapper = styled.div`
-  border: 1px solid ${theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.textContrast};
   border-radius: 5px;
   margin: 5px;
   height: 72px;
 
   &:hover {
-    border-color: ${theme.text};
+    border-color: ${(p): string => p.theme.text};
   }
 `;
 
@@ -278,7 +233,7 @@ const ImagePreviewWrapper = styled.div`
   margin-top: 10px;
   height: 40vh;
   width: 35%;
-  border: 1px solid ${theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.textContrast};
   border-radius: 15px;
 `;
 
@@ -291,7 +246,7 @@ const ImagePreview = styled.img`
 
 const Checkbox = styled.input`
   margin-top: 20px;
-  accent-color: ${theme.highlightDark};
+  accent-color: ${(p): string => p.theme.highlightDark};
 `;
 
 const getSource = async (body: FormData): Promise<PixivDetails | undefined> => {
@@ -325,16 +280,14 @@ const createRedditPost = async (post: Post): Promise<void> => {
   });
 };
 
+const tagOptions: Tags[] = ["Spoiler", "NSFW", "OC"];
+
 interface IndexPageProps {
   subreddits: Subreddit[];
 }
 
 const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
-  const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<Subreddit[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [resultsPerPage, setResultsPerPage] = useState(5);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
   const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
   const [globalTitle, setGlobalTitle] = useState("");
   const [globalTags, setGlobalTags] = useState<Tags[]>([]);
@@ -347,25 +300,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [preview, setPreview] = useState(true);
   const [pixivDetails, setPixivDetails] = useState<PixivDetails>();
 
-  const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
-  const tagOptions: Tags[] = ["Spoiler", "NSFW", "OC"];
-
-  const getSearchResults = (): Subreddit[] => {
-    return subreddits.filter((subreddit) => {
-      const searchFilter = subreddit.name
-        .toLowerCase()
-        .includes(search.toLowerCase());
-
-      const categoryFilter = selectedCategories.length
-        ? selectedCategories.some((selectedCategory) =>
-            subreddit.categories.includes(selectedCategory)
-          )
-        : true;
-
-      return searchFilter && categoryFilter;
-    });
-  };
-
   const createPostTemplate = (subreddit: Subreddit): PostTemplate => {
     return {
       subreddit: subreddit,
@@ -375,29 +309,13 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     };
   };
 
-  const handleFilterChange = (newSearch: string): void => {
-    setSearch(newSearch);
-  };
-
-  const handleCategoryChange = (categories: string[]): void => {
-    setSelectedCategories(categories);
-  };
-
-  const handlePageChange = (page: number) => (): void => {
-    setCurrentPage(page);
-  };
-
-  const handleResultsPerPageChange = (newResultsPerPage: string): void => {
-    setResultsPerPage(Number(newResultsPerPage));
-  };
-
   const handleAddSubreddit = (subreddit: Subreddit) => (): void => {
     setPostTemplates([...postTemplates, createPostTemplate(subreddit)]);
   };
 
   const handleAddAll = (): void => {
     const newPosts: PostTemplate[] = [];
-    searchResults.forEach((subreddit) =>
+    paginatedResults.forEach((subreddit) =>
       newPosts.push(createPostTemplate(subreddit))
     );
     setPostTemplates([...postTemplates, ...newPosts]);
@@ -569,40 +487,12 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   useEffect(() => {
-    setSearchResults([...getSearchResults()]);
-  }, [search, selectedCategories]);
-
-  useEffect(() => {
     updatePixivDetails();
   }, [pixivDetails]);
 
-  let searchResultsSlice = searchResults;
-
-  postTemplates.forEach((post) => {
-    searchResultsSlice = searchResultsSlice.filter(
-      (result) => result !== post.subreddit
-    );
-  });
-
-  searchResultsSlice = searchResultsSlice.slice(
-    currentPage * resultsPerPage,
-    currentPage * resultsPerPage + resultsPerPage
-  );
-
-  let categories: string[] = [];
-
-  subreddits.forEach(
-    (subreddit) =>
-      (categories = [...new Set([...categories, ...subreddit.categories])])
-  );
-
-  const numberOfPages = Math.ceil(
-    (searchResults.length - postTemplates.length) /
-      (resultsPerPage ? resultsPerPage : 1)
-  );
-
-  if (currentPage !== 0 && currentPage > numberOfPages - 1)
-    setCurrentPage(numberOfPages - 1);
+  const paginationFilter = (result: Subreddit): boolean => {
+    return !postTemplates.find((post) => result === post.subreddit);
+  };
 
   return (
     <>
@@ -690,47 +580,16 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           <h2>SEARCH</h2>
         </Gradient>
         <hr />
-        <Filter>
-          <FilterName>
-            Name
-            <SearchBar onChange={handleFilterChange} value={search} />
-          </FilterName>
-          <FilterCategory>
-            Category
-            <Select
-              options={categories}
-              onChange={handleCategoryChange}
-              value={selectedCategories}
-              isMulti
-              isClearable
-            />
-          </FilterCategory>
-        </Filter>
-        Results
-        <PageButtonContainer>
-          {[...new Array(numberOfPages)].map((undef, i) => {
-            return (
-              <PageButton
-                key={i}
-                isSelected={i === currentPage}
-                onClick={handlePageChange(i)}
-              >
-                {i + 1}
-              </PageButton>
-            );
-          })}
-          <ResultsPerPageWrapper>
-            <Select
-              options={resultsPerPageOptions}
-              onChange={handleResultsPerPageChange}
-              value={resultsPerPage.toString()}
-              defaultSelected={resultsPerPageOptions[2]}
-            />
-          </ResultsPerPageWrapper>
-        </PageButtonContainer>
-        {searchResultsSlice.length ? (
+        <SubredditsSearch
+          paginatedResults={paginatedResults}
+          setPaginatedResults={setPaginatedResults}
+          numberOfSelected={postTemplates.length}
+          paginationFilter={paginationFilter}
+          subreddits={subreddits}
+        />
+        {paginatedResults.length ? (
           <>
-            {searchResultsSlice.map((subreddit, i) => {
+            {paginatedResults.map((subreddit, i) => {
               return (
                 <SearchResult key={i}>
                   <Icon
@@ -874,12 +733,28 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                 minTime={dayjs(Date.now())}
                 onChange={handleDateTimeChange}
               />
+              <label>
+                <Checkbox
+                  type="checkbox"
+                  checked={preview}
+                  onChange={handlePreviewChange}
+                />
+                Post Now
+              </label>
             </DateTimeWrapper>
           </LocalizationProvider>
         </NoSSR>
         <CreditButtons>
           <Icon onClick={createPost}>Create Post</Icon>
         </CreditButtons>
+        <label>
+          <Checkbox
+            type="checkbox"
+            checked={preview}
+            onChange={handlePreviewChange}
+          />
+          Clear All Fields After Posting
+        </label>
       </DashboardContent>
     </>
   );

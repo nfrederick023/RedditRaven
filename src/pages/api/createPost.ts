@@ -1,6 +1,6 @@
 import * as https from "https";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Post } from "@client/types/types";
+import { Post } from "@client/utils/types";
 import { creds } from "@server/credentials/creds";
 import Reddit from "reddit";
 

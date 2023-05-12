@@ -1,14 +1,14 @@
+import { BluJayTheme } from "@client/utils/types";
 import React, { FC, useState } from "react";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const SelectBoxWrapper = styled.div`
   position: relative;
 `;
 
 const SelectBox = styled.div`
-  border: 1px solid ${theme.textContrast};
-  color: ${theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
   border-radius: 5px;
   box-shadow: 0 0 0 0px;
   padding: 4px 0px 0px 4px;
@@ -18,17 +18,17 @@ const SelectBox = styled.div`
   user-select: none;
   &:hover {
     cursor: pointer;
-    border: 1px solid ${theme.text};
+    border: 1px solid ${(p): string => p.theme.text};
   }
 
-  ${(props: { isFocused: boolean }): string =>
-    props.isFocused ? `border: 1px solid ${theme.text};` : ""}
+  ${(p: { isFocused: boolean; theme: BluJayTheme }): string =>
+    p.isFocused ? `border: 1px solid ${p.theme.text};` : ""}
 
   i {
-    color: ${theme.textContrast};
+    color: ${(p): string => p.theme.textContrast};
 
     &:hover {
-      color: ${theme.text};
+      color: ${(p): string => p.theme.text};
     }
   }
 `;
@@ -40,20 +40,20 @@ const UnselectedBox = styled.div`
   width: 100%;
   padding: 5px;
   margin-top: 10px;
-  background-color: ${theme.backgroundContrast};
+  background-color: ${(p): string => p.theme.backgroundContrast};
   border-radius: 5px;
   z-index: 100;
 `;
 
 const UnselectedOption = styled.div`
   padding: 5px;
-  color: ${theme.textContrast};
-  border: 1px solid ${theme.backgroundContrast};
+  color: ${(p): string => p.theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.backgroundContrast};
 
   &:hover {
-    color: ${theme.text};
+    color: ${(p): string => p.theme.text};
     cursor: pointer;
-    border: 1px solid ${theme.textContrast};
+    border: 1px solid ${(p): string => p.theme.textContrast};
     border-radius: 5px;
   }
 `;
@@ -65,7 +65,7 @@ const SelectedBox = styled.div`
 `;
 
 const SelectedOption = styled.div`
-  border: 1px solid ${theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.textContrast};
   border-radius: 5px;
   margin: 1px 4px 4px 0px;
   padding: 0px 0px 1px 6px;
@@ -96,7 +96,7 @@ const RightIcons = styled.i`
 `;
 
 const ClearButton = styled.div`
-  border-right: 1px solid ${theme.textContrast};
+  border-right: 1px solid ${(p): string => p.theme.textContrast};
   height: 85%;
 `;
 

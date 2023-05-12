@@ -1,5 +1,5 @@
 import * as https from "https";
-import { PixivDetails } from "@client/types/types";
+import { PixivDetails } from "@client/utils/types";
 import fetch from "node-fetch";
 
 interface PixivImageTags {

@@ -4,6 +4,26 @@ export interface SubredditFlair {
   readonly id: string;
 }
 
+export interface BluJayTheme {
+  readonly background: string;
+  readonly backgroundContrast: string;
+  readonly text: string;
+  readonly textContrast: string;
+  readonly textContrastLight: string;
+  readonly highlightLight: string;
+  readonly highlightDark: string;
+  readonly hightlightSilver: string;
+  readonly button: string;
+}
+
+export interface ScreenSizes {
+  readonly largeScreenSize: number;
+  readonly mediumScreenSize: number;
+  readonly smallScreenSize: number;
+  readonly tabletScreenSize: number;
+  readonly mobileScreenSize: number;
+}
+
 export interface SubredditAbout {
   readonly url: string;
   readonly allowsVideoGifs: boolean;

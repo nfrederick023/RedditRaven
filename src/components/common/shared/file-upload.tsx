@@ -1,6 +1,6 @@
+import { BluJayTheme } from "@client/utils/types";
 import React from "react";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 export type FileUploadProps = {
   imageButton?: boolean;
@@ -15,14 +15,14 @@ export type FileUploadProps = {
 const FileUploadWrapper = styled.div`
   width: 100%;
   height: 100%;
-  color: ${theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
 
   &:hover {
-    color: ${theme.text};
+    color: ${(p): string => p.theme.text};
   }
 
-  color: ${(p: { isDragOver: boolean }): string =>
-    p.isDragOver ? theme.text : theme.textContrast};
+  color: ${(p: { isDragOver: boolean; theme: BluJayTheme }): string =>
+    p.isDragOver ? p.theme.text : p.theme.textContrast};
 `;
 
 const FileUploadInput = styled.input`

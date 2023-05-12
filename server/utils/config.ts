@@ -1,4 +1,4 @@
-import { Subreddit } from "../../src/types/types";
+import { Subreddit } from "../../src/utils/types";
 
 interface Config {
   password: string;

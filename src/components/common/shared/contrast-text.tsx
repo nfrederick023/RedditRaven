@@ -3,10 +3,12 @@ import styled from "styled-components";
 import theme from "@client/utils/themes";
 
 const ContrastTexWrapper = styled.span`
-  color: ${theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
   ${(props: { type: ContrastTypes }): string => {
-    if (props.type === "light") return `color: ${theme.textContrastLight};`;
-    if (props.type === "regular") return `color: ${theme.textContrast};`;
+    if (props.type === "light")
+      return `color: ${(p): string => p.theme.textContrastLight};`;
+    if (props.type === "regular")
+      return `color: ${(p): string => p.theme.textContrast};`;
     return "";
   }}
 `;

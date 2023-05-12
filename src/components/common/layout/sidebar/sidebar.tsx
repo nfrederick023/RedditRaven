@@ -1,13 +1,13 @@
+import { screenSizes } from "@client/utils/themes";
 import { useWindowWidth } from "@react-hook/window-size";
-import Gradient from "../Styled/Gradient";
+import Gradient from "../../shared/gradient";
 import NoSSR from "@mpth/react-no-ssr";
+import PageButton from "./page-button";
 import React, { FC, useEffect, useState } from "react";
-import SideBarButton from "./SideBarButton";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const SidebarWapper = styled.div`
-  background: ${theme.backgroundContrast};
+  background: ${(p): string => p.theme.backgroundContrast};
 
   min-width: 210px;
   max-width: 210px;
@@ -17,7 +17,7 @@ const SidebarWapper = styled.div`
   position: sticky;
   z-index: 1;
 
-  @media (max-width: ${theme.tabletScreenSize}px) {
+  @media (max-width: ${screenSizes.tabletScreenSize}px) {
     position: fixed;
     min-width: 100%;
     height: 100%;
@@ -40,7 +40,7 @@ const SidebarContent = styled.div`
   padding-right: 10px;
   padding-top: 20px;
 
-  @media (max-width: ${theme.tabletScreenSize}px) {
+  @media (max-width: ${screenSizes.tabletScreenSize}px) {
     max-width: 100%;
     width: 100%;
   }
@@ -51,7 +51,7 @@ const Logo = styled.div`
   padding: 5px;
   margin-bottom: 5px;
   text-align: center;
-  @media (max-width: ${theme.tabletScreenSize}px) {
+  @media (max-width: ${screenSizes.tabletScreenSize}px) {
     font-size: 1.75em;
     padding-top: 50px;
     padding-left: 20px;
@@ -74,14 +74,14 @@ const MinimizeButton = styled.div`
 `;
 
 const ArrowIconContainer = styled.div`
-  border-right: ${theme.backgroundContrast} 1px solid;
+  border-right: ${(p): string => p.theme.backgroundContrast} 1px solid;
   position: absolute;
   right: 0px;
   min-height: inherit;
   width: 20px;
   &:hover {
     transition: 0.2s;
-    border-right: ${theme.highlightLight} 1px solid;
+    border-right: ${(p): string => p.theme.highlightLight} 1px solid;
     cursor: pointer;
   }
 `;
@@ -101,7 +101,7 @@ const Sidebar: FC = () => {
   const width = useWindowWidth({ wait: 10 });
 
   useEffect(() => {
-    if (width <= theme.mobileScreenSize) {
+    if (width <= screenSizes.mobileScreenSize) {
       setIsCollapsed(true);
     } else {
       setIsCollapsed(false);
@@ -116,7 +116,7 @@ const Sidebar: FC = () => {
     <>
       <NoSSR>
         <SidebarWapper isCollapsed={isCollapsed}>
-          {width <= theme.tabletScreenSize ? (
+          {width <= screenSizes.tabletScreenSize ? (
             <BarsIcon
               onClick={handleIsCollapsedChange}
               className="bx bx-menu bx-lg"
@@ -137,28 +137,28 @@ const Sidebar: FC = () => {
                   </Gradient>
                   <h1>RAVEN</h1>
                 </Logo>
-                <SideBarButton
+                <PageButton
                   title={"Dashboard"}
                   icon={"bx bxs-dashboard"}
                   url={""}
                 />
 
-                <SideBarButton
+                <PageButton
                   title={"Schedule"}
                   icon={"bx bx-time"}
-                  url={"favorites"}
+                  url={"schedule"}
                 />
 
-                <SideBarButton
+                <PageButton
                   title={"Subreddits"}
-                  icon={"bx bx-list-ul bx-sm"}
-                  url={"all"}
+                  icon={"bx bx-list-ul"}
+                  url={"subreddits"}
                 />
 
-                <SideBarButton
+                <PageButton
                   title={"Stats"}
                   icon={"bx bx-stats"}
-                  url={"library"}
+                  url={"stats"}
                 />
               </>
             )}

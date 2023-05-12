@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { PixivDetails } from "@client/types/types";
+import { PixivDetails } from "@client/utils/types";
 import { creds } from "@server/credentials/creds";
 import { getImageLink } from "@server/api/getPixivDetails";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

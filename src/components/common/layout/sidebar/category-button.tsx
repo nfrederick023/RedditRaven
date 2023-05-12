@@ -1,38 +1,19 @@
 import { useRouter } from "next/router";
 import React, { FC } from "react";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const CategoryButtonWrapper = styled.div`
+  color: ${(p): string => p.theme.textContrast};
   padding: 7px;
-  padding-left: 25px;
+  padding-left: 22px;
 
   div {
-    display: inline-block;
-    position: relative;
-
-    ::after {
-      content: "";
-      position: absolute;
-      width: 100%;
-      transform: scaleX(0);
-      height: 1px;
-      bottom: 0;
-      left: 0;
-      background-color: ${theme.textContrast};
-      transform-origin: bottom right;
-      transition: transform 0.25s ease-out;
-    }
+    transition: 0.1s;
   }
 
   &:hover {
     div {
-      color: ${theme.text};
-      // uncomment to enable underline animation
-      /* ::after {
-        transform: scaleX(1);
-        transform-origin: bottom left;
-      } */
+      color: ${(p): string => p.theme.text};
     }
     cursor: pointer;
   }
@@ -41,7 +22,7 @@ const CategoryButtonWrapper = styled.div`
 const CategoryButtonName = styled.div``;
 
 const SelectedCategory = styled.div`
-  color: ${theme.text};
+  color: ${(p): string => p.theme.text};
 `;
 
 interface CategoryButtonProps {

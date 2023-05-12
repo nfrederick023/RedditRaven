@@ -10,7 +10,7 @@ const HeaderWrapper = styled.div`
 `;
 
 const HeaderContent = styled.div`
-  background-color: ${theme.background};
+  background-color: ${(p): string => p.theme.background};
   position: fixed;
   top: 0;
   width: 100%;

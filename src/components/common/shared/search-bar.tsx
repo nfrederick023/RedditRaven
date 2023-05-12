@@ -1,10 +1,10 @@
+import { BluJayTheme } from "@client/utils/types";
 import React, { FC, useRef, useState } from "react";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const SearchBarContent = styled.div`
-  border: 1px solid ${theme.textContrast};
-  color: ${theme.textContrast};
+  border: 1px solid ${(p): string => p.theme.textContrast};
+  color: ${(p): string => p.theme.textContrast};
   border-radius: 5px;
   display: flex;
   margin: auto;
@@ -12,8 +12,8 @@ const SearchBarContent = styled.div`
   max-height: 32px;
   min-height: 32px;
 
-  ${(props: { isFocused: boolean }): string =>
-    props.isFocused ? `border: 1px solid ${theme.text};` : ""}
+  ${(p: { isFocused: boolean; theme: BluJayTheme }): string =>
+    p.isFocused ? `border: 1px solid ${p.theme.text};` : ""}
 
   &:hover {
     cursor: text;
@@ -23,7 +23,7 @@ const SearchBarContent = styled.div`
 const SearchBarInput = styled.input`
   border: 0px;
   margin: 0px 0px 0px 2px;
-  color: ${theme.text};
+  color: ${(p): string => p.theme.text};
   background-color: rgba(0, 0, 0, 0);
   width: 100%;
 
@@ -32,7 +32,7 @@ const SearchBarInput = styled.input`
   }
 
   ::placeholder {
-    color: ${theme.textContrast};
+    color: ${(p): string => p.theme.textContrast};
   }
 `;
 

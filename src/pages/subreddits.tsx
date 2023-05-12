@@ -1,22 +1,25 @@
 import { GetServerSideProps, NextPage } from "next";
 import { Subreddit } from "@client/utils/types";
 import { getSubredditsList } from "@server/utils/config";
-import IndexPage from "@client/components/pages/index";
 import React from "react";
 
-interface IndexProps {
+interface SubredditsProps {
   subreddits: Subreddit[];
 }
 
-const Index: NextPage<IndexProps> = ({ subreddits }: IndexProps) => {
+const Subreddits: NextPage<SubredditsProps> = ({
+  subreddits,
+}: SubredditsProps) => {
   return (
     <>
-      <IndexPage {...{ subreddits }} />
+      <SubredditsPage {...{ subreddits }} />
     </>
   );
 };
 
-export const getServerSideProps: GetServerSideProps<IndexProps> = async () => {
+export const getServerSideProps: GetServerSideProps<
+  SubredditsProps
+> = async () => {
   return {
     props: {
       subreddits: await getSubredditsList(),
@@ -24,4 +27,4 @@ export const getServerSideProps: GetServerSideProps<IndexProps> = async () => {
   };
 };
 
-export default Index;
+export default Subreddits;
