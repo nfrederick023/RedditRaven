@@ -12,7 +12,8 @@
     "test:e2e": "npx playwright test"
   },
   "browser": {
-    "fs": false
+    "fs": false,
+    "fs-extra": false
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",

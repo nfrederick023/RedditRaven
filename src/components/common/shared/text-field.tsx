@@ -1,20 +1,17 @@
+import { BluJayTheme } from "@client/utils/types";
 import React, { FC, useRef, useState } from "react";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const TextFieldContent = styled.div`
   border-bottom: 1px solid ${(p): string => p.theme.textContrast};
   color: ${(p): string => p.theme.textContrast};
   display: flex;
-  margin: auto;
   padding: 5px;
   max-height: 32px;
   min-height: 32px;
 
-  ${(props: { isFocused: boolean }): string =>
-    props.isFocused
-      ? `border-bottom: 1px solid ${(p): string => p.theme.text};`
-      : ""}
+  ${(p: { isFocused: boolean; theme: BluJayTheme }): string =>
+    p.isFocused ? `border-bottom: 1px solid ${p.theme.text};` : ""}
 
   &:hover {
     cursor: text;
@@ -41,12 +38,14 @@ interface TextFieldProps {
   onChange: (text: string) => void;
   value: string;
   placeholder: string;
+  prefix?: string;
 }
 
 const TextField: FC<TextFieldProps> = ({
   onChange,
   value,
   placeholder,
+  prefix,
 }: TextFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -75,6 +74,7 @@ const TextField: FC<TextFieldProps> = ({
       onBlur={onBlur}
       isFocused={isFocused}
     >
+      {prefix}
       <TextFieldInput
         ref={input}
         onChange={handleInput}

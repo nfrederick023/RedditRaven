@@ -40,7 +40,7 @@ export interface Subreddit {
   readonly name: string;
   readonly info: SubredditInfo;
   readonly categories: string[];
-  readonly notes: string[];
+  readonly notes: string;
 }
 
 export enum AuthStatus {
@@ -74,3 +74,39 @@ export interface PostTemplate {
 }
 
 export type Tags = "NSFW" | "OC" | "Spoiler";
+
+export interface SubmitResponse {
+  json: {
+    errors: string[],
+    data: {
+      url: string,
+      drafts_count: number,
+      id: string,
+      name: string
+    }
+  }
+}
+
+export interface SubmitRequest {
+  title: string;
+  url: string;
+  sr: string;
+  nsfw: boolean;
+}
+
+export interface CommentResponse {
+  json: {
+    errors: string[],
+    data: {
+      url: string,
+      drafts_count: number,
+      id: string,
+      name: string
+    }
+  }
+}
+
+export interface CommentRequest {
+  text: string;
+  thing_id: string;
+}

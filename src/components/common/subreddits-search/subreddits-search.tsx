@@ -127,7 +127,7 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
   );
 
   const paginateResults = (): void => {
-    let searchResultsSlice = searchResults;
+    let searchResultsSlice = getSearchResults();
 
     if (paginationFilter) {
       searchResultsSlice = searchResultsSlice.filter(paginationFilter);

@@ -140,25 +140,25 @@ const Sidebar: FC = () => {
                 <PageButton
                   title={"Dashboard"}
                   icon={"bx bxs-dashboard"}
-                  url={""}
+                  url={"/"}
                 />
 
                 <PageButton
                   title={"Schedule"}
                   icon={"bx bx-time"}
-                  url={"schedule"}
+                  url={"/schedule"}
                 />
 
                 <PageButton
                   title={"Subreddits"}
                   icon={"bx bx-list-ul"}
-                  url={"subreddits"}
+                  url={"/subreddits"}
                 />
 
                 <PageButton
                   title={"Stats"}
                   icon={"bx bx-stats"}
-                  url={"stats"}
+                  url={"/stats"}
                 />
               </>
             )}

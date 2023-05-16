@@ -48,7 +48,7 @@ const PageButton: FC<PageButtonProps> = ({
   icon,
   url,
 }: PageButtonProps) => {
-  const isSelected = window.location.pathname.split("/")[1] === url;
+  const isSelected = window.location.pathname === url;
   const router = useRouter();
   const navigateToPage = (): void => {
     router.push(url);

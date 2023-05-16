@@ -274,7 +274,7 @@ const getImage = async (link: string): Promise<Response> => {
 };
 
 const createRedditPost = async (post: Post): Promise<void> => {
-  const response = await fetch("/api/createPost", {
+  await fetch("/api/createPost", {
     method: "POST",
     body: JSON.stringify({ post }),
   });
@@ -600,6 +600,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                     className="bx bx-link"
                     onClick={copyLink(subreddit.name)}
                   />
+                  <a href={"https://www.reddit.com" + subreddit.info.url}>
+                    <Icon className="bx bx-link-external" />
+                  </a>
                   {subreddit.name}
                 </SearchResult>
               );

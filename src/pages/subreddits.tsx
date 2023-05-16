@@ -2,6 +2,7 @@ import { GetServerSideProps, NextPage } from "next";
 import { Subreddit } from "@client/utils/types";
 import { getSubredditsList } from "@server/utils/config";
 import React from "react";
+import SubredditsPage from "@client/components/pages/subreddits/subreddits";
 
 interface SubredditsProps {
   subreddits: Subreddit[];
@@ -22,7 +23,7 @@ export const getServerSideProps: GetServerSideProps<
 > = async () => {
   return {
     props: {
-      subreddits: await getSubredditsList(),
+      subreddits: getSubredditsList(),
     },
   };
 };

@@ -1,46 +1,6 @@
-import * as https from "https";
+import { CommentRequest, Post, SubmitRequest } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Post } from "@client/utils/types";
-import { creds } from "@server/credentials/creds";
-import Reddit from "reddit";
-
-interface SubmitResponse {
-  json: {
-    errors: string[],
-    data: {
-      url: string,
-      drafts_count: number,
-      id: string,
-      name: string
-    }
-  }
-}
-
-interface SubmitRequest {
-  title: string;
-  url: string;
-  sr: string;
-  nsfw: boolean;
-}
-
-interface CommentResponse {
-  json: {
-    errors: string[],
-    data: {
-      url: string,
-      drafts_count: number,
-      id: string,
-      name: string
-    }
-  }
-}
-
-interface CommentRequest {
-  text: string;
-  thing_id: string;
-}
-
-
+import { submitComment, submitPost } from "@server/api/redditService";
 
 const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
@@ -56,13 +16,6 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     return;
   }
 
-  const reddit: Reddit = new Reddit({
-    username: creds.REDDIT_USERNAME,
-    password: creds.PASSWORD,
-    appId: creds.APP_ID,
-    appSecret: creds.APP_SECRET
-  });
-
   post.postDetails.forEach(async postDetail => {
     const postRequest: SubmitRequest = {
       title: postDetail.title,
@@ -71,18 +24,15 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
       nsfw: postDetail.tags.includes("NSFW")
     };
 
-    const postResponse = await reddit.post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    const postResponse = await submitPost(postRequest);
     if (post.comment) {
       const commentReqeust: CommentRequest = {
         text: post.comment,
         thing_id: postResponse.json.data.name,
       };
-      await reddit.post<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
+      await submitComment(commentReqeust);
     }
   });
-
-
-
 
   res.end();
 };
