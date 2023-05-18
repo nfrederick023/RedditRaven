@@ -68,7 +68,7 @@ export interface Post {
 
 export interface PostTemplate {
   subreddit: Subreddit;
-  flair: string;
+  flair?: SubredditFlair;
   tags: Tags[];
   title: string;
 }
@@ -89,9 +89,11 @@ export interface SubmitResponse {
 
 export interface SubmitRequest {
   title: string;
-  url: string;
   sr: string;
+  url: string;
   nsfw: boolean;
+  flair_id?: string;
+  kind: "link" | "self" | "image" | "video" | "videogif";
 }
 
 export interface CommentResponse {

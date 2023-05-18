@@ -22,7 +22,9 @@
     "@mui/x-date-pickers": "^6.2.0",
     "@react-hook/window-size": "^3.1.1",
     "@tippyjs/react": "^4.2.0",
+    "blob-to-buffer": "^1.2.9",
     "dayjs": "^1.11.7",
+    "fetch-blob": "^3.2.0",
     "file-type": "^2.1.4",
     "formidable": "^2.1.1",
     "fs-extra": "^10.1.0",
@@ -37,11 +39,14 @@
     "react-dom": "^18.2.0",
     "reddit": "^1.2.1",
     "saucenao": "^0.0.2",
-    "styled-components": "^5.1.1"
+    "snoowrap": "^1.23.0",
+    "styled-components": "^5.1.1",
+    "websocket": "^1.0.34"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^12.3.1",
     "@playwright/test": "^1.15.0",
+    "@types/blob-to-buffer": "^1.2.0",
     "@types/config": "^3.3.0",
     "@types/express": "^4.17.13",
     "@types/formidable": "^2.0.5",
@@ -51,6 +56,7 @@
     "@types/node": "18.13.0",
     "@types/reddit": "^1.2.1",
     "@types/styled-components": "^5.1.26",
+    "@types/websocket": "^1.0.5",
     "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.33.0",
     "autoprefixer": "^10.4.13",

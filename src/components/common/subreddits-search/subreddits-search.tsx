@@ -193,7 +193,7 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
             options={resultsPerPageOptions}
             onChange={handleResultsPerPageChange}
             value={resultsPerPage.toString()}
-            defaultSelected={resultsPerPageOptions[2]}
+            defaultSelected={resultsPerPageOptions[3]}
           />
         </ResultsPerPageWrapper>
       </PageButtonContainer>

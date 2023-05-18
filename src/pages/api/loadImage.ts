@@ -34,9 +34,12 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   );
 
   if (response.ok) {
-    const contentType = response.headers.get("content-type") ?? "";
-    res.setHeader("Content-Type", contentType);
-    response.body?.pipe(res);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    res.send(Buffer.from(arrayBuffer));
+    // const contentType = response.headers.get("content-type") ?? "";
+    // res.setHeader("Content-Type", contentType);
+    // response.body?.pipe(res);
     return;
   }
 

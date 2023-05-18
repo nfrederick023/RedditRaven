@@ -21,14 +21,16 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
       title: postDetail.title,
       url: post.imageLink,
       sr: postDetail.subreddit.name,
-      nsfw: postDetail.tags.includes("NSFW")
+      nsfw: postDetail.tags.includes("NSFW"),
+      flair_id: postDetail.flair?.id,
+      kind: "link"
     };
 
     const postResponse = await submitPost(postRequest);
     if (post.comment) {
       const commentReqeust: CommentRequest = {
         text: post.comment,
-        thing_id: postResponse.json.data.name,
+        thing_id: postResponse,
       };
       await submitComment(commentReqeust);
     }

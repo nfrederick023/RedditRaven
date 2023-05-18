@@ -10,6 +10,7 @@ import {
   Post,
   PostTemplate,
   Subreddit,
+  SubredditFlair,
   Tags,
 } from "@client/utils/types";
 import Gradient from "@client/components/common/shared/gradient";
@@ -304,8 +305,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     return {
       subreddit: subreddit,
       title: "",
+      flair: undefined,
       tags: [],
-      flair: "",
     };
   };
 
@@ -326,7 +327,10 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleFlairChange = (subreddit: Subreddit) => {
-    return (flair: string): void => {
+    return (flairName: string): void => {
+      const flair = subreddit.info.flairs.find(
+        (flair) => flair.name === flairName
+      );
       setPostTemplates(
         postTemplates.map((post) => {
           if (post.subreddit === subreddit) post.flair = flair;
@@ -648,7 +652,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                         options={post.subreddit.info.flairs.map(
                           (flair) => flair.name
                         )}
-                        value={post.flair}
+                        value={post.flair?.name || ""}
                         onChange={handleFlairChange(post.subreddit)}
                       />
                     ) : (
