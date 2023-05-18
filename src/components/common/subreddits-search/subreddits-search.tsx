@@ -52,12 +52,12 @@ const ResultsPerPageWrapper = styled.div`
   margin-right: 3px;
 `;
 
-const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
-
 interface SubredditSearchProps {
   subreddits: Subreddit[];
   numberOfSelected?: number;
   paginatedResults: Subreddit[];
+  resultsPerPageOptions: string[];
+  intialResultsPerPage: string;
   setPaginatedResults: React.Dispatch<React.SetStateAction<Subreddit[]>>;
   paginationFilter?: (result: Subreddit) => boolean;
 }
@@ -66,12 +66,16 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
   subreddits,
   numberOfSelected,
   paginatedResults,
+  resultsPerPageOptions,
+  intialResultsPerPage,
   setPaginatedResults,
   paginationFilter,
 }: SubredditSearchProps) => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<Subreddit[]>([]);
-  const [resultsPerPage, setResultsPerPage] = useState(5);
+  const [resultsPerPage, setResultsPerPage] = useState(
+    Number(intialResultsPerPage)
+  );
   const [currentPage, setCurrentPage] = useState(0);
   const [search, setSearch] = useState("");
 
@@ -193,7 +197,7 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
             options={resultsPerPageOptions}
             onChange={handleResultsPerPageChange}
             value={resultsPerPage.toString()}
-            defaultSelected={resultsPerPageOptions[3]}
+            defaultSelected={resultsPerPage.toString()}
           />
         </ResultsPerPageWrapper>
       </PageButtonContainer>

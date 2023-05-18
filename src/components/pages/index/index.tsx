@@ -153,6 +153,7 @@ const NoSearchResults = styled.div`
 
 const DateTimeWrapper = styled.div`
   > div {
+    width: 25%;
     margin: 8px 5px 0px 0px;
   }
 
@@ -274,15 +275,16 @@ const getImage = async (link: string): Promise<Response> => {
   return response;
 };
 
-const createRedditPost = async (post: Post): Promise<void> => {
-  await fetch("/api/createPost", {
+const createRedditPost = async (post: Post): Promise<Response> => {
+  const response = await fetch("/api/createPost", {
     method: "POST",
     body: JSON.stringify({ post }),
   });
+  return response;
 };
 
 const tagOptions: Tags[] = ["Spoiler", "NSFW", "OC"];
-
+const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
 interface IndexPageProps {
   subreddits: Subreddit[];
 }
@@ -300,6 +302,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [imgurl, setImageUrl] = useState("");
   const [preview, setPreview] = useState(true);
   const [pixivDetails, setPixivDetails] = useState<PixivDetails>();
+  const [clearOnPost, setClearOnPost] = useState(true);
 
   const createPostTemplate = (subreddit: Subreddit): PostTemplate => {
     return {
@@ -446,11 +449,16 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleAddSource = (): void => {
+    console.log(pixivDetails?.pixivLink);
     setComment(comment + `[Source](${pixivDetails?.pixivLink})`);
   };
 
   const handleClearComment = (): void => {
     setComment("");
+  };
+
+  const handleClearOnPostChange = (): void => {
+    setClearOnPost(!clearOnPost);
   };
 
   const createPost = (): void => {
@@ -480,6 +488,18 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       return;
     }
 
+    const isAllFlairsSelected = !!postTemplates.find(
+      (postTemplate) =>
+        !postTemplate.flair && postTemplate.subreddit.info.flairs.length
+    );
+
+    if (isAllFlairsSelected) {
+      const notAllFlairsSelectedConfirmation = !confirm(
+        "Not all flairs are selected. Are you sure you wish to continue?"
+      );
+      if (notAllFlairsSelectedConfirmation) return;
+    }
+
     const post: Post = {
       postDetails: postTemplates,
       imageLink: pixivDetails.imageLink,
@@ -488,6 +508,17 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     };
 
     createRedditPost(post);
+
+    if (clearOnPost) {
+      setPostTemplates([]);
+      setPixivDetails(undefined);
+      setPaginatedResults([]);
+      setGlobalTitle("");
+      setGlobalTags([]);
+      setComment("");
+      setLink("");
+      setImageUrl("");
+    }
   };
 
   useEffect(() => {
@@ -590,6 +621,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           numberOfSelected={postTemplates.length}
           paginationFilter={paginationFilter}
           subreddits={subreddits}
+          resultsPerPageOptions={resultsPerPageOptions}
+          intialResultsPerPage={resultsPerPageOptions[3]}
         />
         {paginatedResults.length ? (
           <>
@@ -757,8 +790,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         <label>
           <Checkbox
             type="checkbox"
-            checked={preview}
-            onChange={handlePreviewChange}
+            checked={clearOnPost}
+            onChange={handleClearOnPostChange}
           />
           Clear All Fields After Posting
         </label>
