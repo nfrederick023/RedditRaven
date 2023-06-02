@@ -23,7 +23,7 @@ export const getServerSideProps: GetServerSideProps<
 > = async () => {
   return {
     props: {
-      subreddits: getSubredditsList(),
+      subreddits: await getSubredditsList(),
     },
   };
 };

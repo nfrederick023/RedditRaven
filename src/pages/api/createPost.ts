@@ -23,7 +23,8 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
       sr: postDetail.subreddit.name,
       nsfw: postDetail.tags.includes("NSFW"),
       flair_id: postDetail.flair?.id,
-      kind: "link"
+      kind: "link",
+      sendreplies: true
     };
 
     const postResponse = await submitPost(postRequest);

@@ -1,6 +1,5 @@
 import React, { FC } from "react";
 import styled from "styled-components";
-import theme from "@client/utils/themes";
 
 const HeaderWrapper = styled.div`
   height: 40px;

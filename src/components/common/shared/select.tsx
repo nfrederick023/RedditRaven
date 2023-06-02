@@ -188,7 +188,7 @@ const Select: FC<SelectProps> = ({
     }
   };
 
-  const unselectedOptions = options.filter((option) => !value.includes(option));
+  const unselectedOptions = options.filter((option) => value !== option);
 
   return (
     <SelectBoxWrapper>

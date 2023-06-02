@@ -36,6 +36,7 @@ const Icon = styled.div`
   padding: 6px;
   transition: all 0.1s ease-in;
   user-select: none;
+  display: inline-block;
 
   color: ${(p): string => p.theme.textContrast};
 
@@ -44,6 +45,14 @@ const Icon = styled.div`
     border-color: ${(p): string => p.theme.text};
     color: ${(p): string => p.theme.text};
   }
+`;
+
+const ListOptions = styled.div`
+  width: 50%;
+`;
+
+const ListName = styled.div`
+  width: 90%;
 `;
 
 const NoSearchResults = styled.div`
@@ -67,6 +76,7 @@ const removeSubreddit = async (name: string): Promise<Response> => {
   return response;
 };
 
+const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
 interface SubredditsPageProps {
   subreddits: Subreddit[];
 }
@@ -121,25 +131,37 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
         setPaginatedResults={setPaginatedResults}
         numberOfSelected={0}
         subreddits={subredditList}
+        resultsPerPageOptions={resultsPerPageOptions}
+        intialResultsPerPage={resultsPerPageOptions[2]}
       />
+      <FlexWrapper>
+        <ListOptions>
+          <h4>Options</h4>
+        </ListOptions>
+        <ListName>
+          <h4>Subreddit</h4>
+        </ListName>
+      </FlexWrapper>
       {paginatedResults.length ? (
         <>
           {paginatedResults.map((subreddit, i) => {
             return (
               <SearchResult key={i}>
-                <Icon>Select</Icon>
-                <Icon
-                  className="bx bx-link"
-                  onClick={copyLink(subreddit.name)}
-                />
-                <a href={"https://www.reddit.com" + subreddit.info.url}>
-                  <Icon className="bx bx-link-external" />
-                </a>
-                <Icon
-                  className="bx bx-x"
-                  onClick={handleRemoveSubreddit(subreddit.name)}
-                />
-                {subreddit.name}
+                <ListOptions>
+                  <Icon>Select</Icon>
+                  <Icon
+                    className="bx bx-link"
+                    onClick={copyLink(subreddit.name)}
+                  />
+                  <a href={"https://www.reddit.com" + subreddit.info.url}>
+                    <Icon className="bx bx-link-external" />
+                  </a>
+                  <Icon
+                    className="bx bx-x"
+                    onClick={handleRemoveSubreddit(subreddit.name)}
+                  />
+                </ListOptions>
+                <ListName>{subreddit.name}</ListName>
               </SearchResult>
             );
           })}

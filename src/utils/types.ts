@@ -25,22 +25,26 @@ export interface ScreenSizes {
 }
 
 export interface SubredditAbout {
-  readonly url: string;
-  readonly allowsVideoGifs: boolean;
-  readonly allowsVideos: boolean;
-  readonly isCrosspostable: boolean;
-  readonly isNSFW: boolean;
+  url: string;
+  isCrosspostable: boolean;
+  isNSFW: boolean;
 }
 
 export interface SubredditInfo extends SubredditAbout {
   readonly flairs: SubredditFlair[];
 }
 
+export interface PixivTag {
+  jpName: string;
+  enName: string;
+  link: string;
+}
+
 export interface Subreddit {
-  readonly name: string;
-  readonly info: SubredditInfo;
-  readonly categories: string[];
-  readonly notes: string;
+  name: string;
+  info: SubredditInfo;
+  categories: string[];
+  notes: string;
 }
 
 export enum AuthStatus {
@@ -92,6 +96,7 @@ export interface SubmitRequest {
   sr: string;
   url: string;
   nsfw: boolean;
+  sendreplies: boolean;
   flair_id?: string;
   kind: "link" | "self" | "image" | "video" | "videogif";
 }

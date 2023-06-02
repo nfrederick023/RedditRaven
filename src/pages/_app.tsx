@@ -28,7 +28,7 @@ input, textarea, select {
 
 // prevents content shift on scrollbar
 body {
-  width: calc(100vw - 15px);
+  width: calc(100vw - 17px);
 }
 
 // hide scrollbar on 100vh

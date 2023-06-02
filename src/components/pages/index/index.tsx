@@ -10,7 +10,6 @@ import {
   Post,
   PostTemplate,
   Subreddit,
-  SubredditFlair,
   Tags,
 } from "@client/utils/types";
 import Gradient from "@client/components/common/shared/gradient";
@@ -36,10 +35,6 @@ const SearchResult = styled.div`
   display: flex;
   align-items: center;
   padding-bottom: 5px;
-
-  div {
-    margin-right: 5px;
-  }
 `;
 
 const Icon = styled.div`
@@ -48,6 +43,7 @@ const Icon = styled.div`
   padding: 5px;
   transition: all 0.1s ease-in;
   user-select: none;
+  display: inline-block;
 
   color: ${(p): string => p.theme.textContrast};
 
@@ -77,8 +73,19 @@ const DetailsWrapper = styled.div`
   }
 `;
 
+const DetailsOptions = styled.div`
+  width: 10%;
+  align-items: center;
+  display: flex;
+  overflow: hidden;
+
+  div {
+    margin-right: 5px;
+  }
+`;
+
 const DetailsSubreddit = styled.div`
-  width: 20%;
+  width: 15%;
   align-items: center;
   display: flex;
   overflow: hidden;
@@ -98,7 +105,7 @@ const DetailsFlair = styled.div`
 `;
 
 const DetailsTags = styled.div`
-  width: 30%;
+  width: 25%;
   align-self: center;
   display: flex;
   > div {
@@ -247,8 +254,13 @@ const ImagePreview = styled.img`
 `;
 
 const Checkbox = styled.input`
-  margin-top: 20px;
+  margin-top: 17px;
+  vertical-align: text-bottom;
   accent-color: ${(p): string => p.theme.highlightDark};
+`;
+
+const CheckboxLabel = styled.label`
+  user-select: none;
 `;
 
 const getSource = async (body: FormData): Promise<PixivDetails | undefined> => {
@@ -284,7 +296,7 @@ const createRedditPost = async (post: Post): Promise<Response> => {
 };
 
 const tagOptions: Tags[] = ["Spoiler", "NSFW", "OC"];
-const resultsPerPageOptions = ["1", "5", "10", "20", "50", "100"];
+const resultsPerPageOptions = ["5", "10", "20", "50", "100"];
 interface IndexPageProps {
   subreddits: Subreddit[];
 }
@@ -293,6 +305,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
   const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
   const [globalTitle, setGlobalTitle] = useState("");
+  const [includeSource, setIncludeSoure] = useState(true);
+  const [postNow, setPostNow] = useState(true);
   const [globalTags, setGlobalTags] = useState<Tags[]>([]);
   const [comment, setComment] = useState("");
   const [dateTime, setDateTime] = useState(
@@ -448,9 +462,13 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     setComment(comment + `\n\nArt by: ${pixivDetails?.artist}`);
   };
 
+  const handleCreditArtistInTitle = (): void => {
+    setGlobalTitle(globalTitle + ` (by ${pixivDetails?.artist})`);
+  };
+
   const handleAddSource = (): void => {
-    console.log(pixivDetails?.pixivLink);
-    setComment(comment + `[Source](${pixivDetails?.pixivLink})`);
+    const source = `[Source](${pixivDetails?.pixivLink})`;
+    if (!comment.includes(source)) setComment(comment + source);
   };
 
   const handleClearComment = (): void => {
@@ -461,9 +479,16 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     setClearOnPost(!clearOnPost);
   };
 
+  const handleIncludeSourceChange = (): void => {
+    setIncludeSoure(!includeSource);
+  };
+
+  const handlePostNowChange = (): void => {
+    setPostNow(!postNow);
+  };
+
   const createPost = (): void => {
     // check all required fields
-
     for (const postTemplate of postTemplates) {
       if (!postTemplate.title) {
         alert(`Subreddit: ${postTemplate.subreddit.name} is missing a title!`);
@@ -481,7 +506,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       return;
     }
 
-    if (dateTime.toDate().getTime() < Date.now()) {
+    if (dateTime.toDate().getTime() < Date.now() && !postNow) {
       alert(
         "The time selected is in the past. Please select a different time!"
       );
@@ -500,11 +525,15 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       if (notAllFlairsSelectedConfirmation) return;
     }
 
+    const _comment = includeSource
+      ? comment + `[Source](${pixivDetails?.pixivLink})`
+      : comment;
+
     const post: Post = {
       postDetails: postTemplates,
       imageLink: pixivDetails.imageLink,
       dateTimeMS: dateTime.toDate().getTime(),
-      comment,
+      comment: _comment,
     };
 
     createRedditPost(post);
@@ -622,25 +651,48 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           paginationFilter={paginationFilter}
           subreddits={subreddits}
           resultsPerPageOptions={resultsPerPageOptions}
-          intialResultsPerPage={resultsPerPageOptions[3]}
+          intialResultsPerPage={resultsPerPageOptions[2]}
         />
+        <FlexWrapper>
+          <DetailsOptions>
+            <h4>Options</h4>
+          </DetailsOptions>
+          <DetailsFlair>
+            <h4>Subreddit</h4>
+          </DetailsFlair>
+
+          <DetailsTags>
+            <h4>Tags</h4>
+          </DetailsTags>
+        </FlexWrapper>
         {paginatedResults.length ? (
           <>
             {paginatedResults.map((subreddit, i) => {
               return (
                 <SearchResult key={i}>
-                  <Icon
-                    className="bx bx-plus"
-                    onClick={handleAddSubreddit(subreddit)}
-                  />
-                  <Icon
-                    className="bx bx-link"
-                    onClick={copyLink(subreddit.name)}
-                  />
-                  <a href={"https://www.reddit.com" + subreddit.info.url}>
-                    <Icon className="bx bx-link-external" />
-                  </a>
-                  {subreddit.name}
+                  <DetailsOptions>
+                    <Icon
+                      className="bx bx-plus"
+                      onClick={handleAddSubreddit(subreddit)}
+                      title="Select"
+                    />
+                    <Icon
+                      className="bx bx-link"
+                      onClick={copyLink(subreddit.name)}
+                      title="Copy Link"
+                    />
+                    <a
+                      href={"https://www.reddit.com" + subreddit.info.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Icon
+                        className="bx bx-link-external"
+                        title="Open in New Tab"
+                      />
+                    </a>
+                  </DetailsOptions>
+                  <DetailsFlair>{subreddit.name}</DetailsFlair>
                 </SearchResult>
               );
             })}
@@ -654,6 +706,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         </Gradient>
         <hr />
         <FlexWrapper>
+          <DetailsOptions>
+            <h4>Options</h4>
+          </DetailsOptions>
           <DetailsSubreddit>
             <h4>Subreddit</h4>
           </DetailsSubreddit>
@@ -672,13 +727,29 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             {postTemplates.map((post, i) => {
               return (
                 <DetailsWrapper key={i}>
-                  <DetailsSubreddit>
+                  <DetailsOptions>
                     <Icon
                       className="bx bx-x"
                       onClick={handleRemoveSubreddit(post.subreddit)}
+                      title="Unselect"
                     />
-                    {post.subreddit.name}
-                  </DetailsSubreddit>
+                    <Icon
+                      className="bx bx-link"
+                      onClick={copyLink(post.subreddit.name)}
+                      title="Copy Link"
+                    />
+                    <a
+                      href={"https://www.reddit.com" + post.subreddit.info.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Icon
+                        className="bx bx-link-external"
+                        title="Open in New Tab"
+                      />
+                    </a>
+                  </DetailsOptions>
+                  <DetailsSubreddit>{post.subreddit.name}</DetailsSubreddit>
                   <DetailsFlair>
                     {post.subreddit.info.flairs.length ? (
                       <Select
@@ -742,6 +813,11 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             />
           </InputFields>
         </FlexWrapper>
+        <CreditButtons>
+          <Icon onClick={handleCreditArtistInTitle}>
+            Credit Artist All Titles
+          </Icon>
+        </CreditButtons>
         <Divider />
         <h4>Comment</h4>
         <CommentWrapper>
@@ -754,6 +830,14 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           <CreditButtons>
             <Icon onClick={handleCreditArtist}>Credit Artist</Icon>
           </CreditButtons>
+          <CheckboxLabel>
+            <Checkbox
+              type="checkbox"
+              checked={includeSource}
+              onChange={handleIncludeSourceChange}
+            />
+            Default Include Source
+          </CheckboxLabel>
           <ClearButton>
             <Icon onClick={handleClearComment}>Clear</Icon>
           </ClearButton>
@@ -773,28 +857,28 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                 minTime={dayjs(Date.now())}
                 onChange={handleDateTimeChange}
               />
-              <label>
+              <CheckboxLabel>
                 <Checkbox
                   type="checkbox"
-                  checked={preview}
-                  onChange={handlePreviewChange}
+                  checked={postNow}
+                  onChange={handlePostNowChange}
                 />
                 Post Now
-              </label>
+              </CheckboxLabel>
             </DateTimeWrapper>
           </LocalizationProvider>
         </NoSSR>
         <CreditButtons>
           <Icon onClick={createPost}>Create Post</Icon>
         </CreditButtons>
-        <label>
+        <CheckboxLabel>
           <Checkbox
             type="checkbox"
             checked={clearOnPost}
             onChange={handleClearOnPostChange}
           />
           Clear All Fields After Posting
-        </label>
+        </CheckboxLabel>
       </DashboardContent>
     </>
   );

@@ -19,7 +19,7 @@ const Index: NextPage<IndexProps> = ({ subreddits }: IndexProps) => {
 export const getServerSideProps: GetServerSideProps<IndexProps> = async () => {
   return {
     props: {
-      subreddits: getSubredditsList(),
+      subreddits: await getSubredditsList(),
     },
   };
 };
