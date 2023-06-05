@@ -37,9 +37,14 @@ const TextAreaInput = styled.textarea`
 interface TextAreaProps {
   onChange: (text: string) => void;
   value: string;
+  placeholder?: string;
 }
 
-const TextArea: FC<TextAreaProps> = ({ onChange, value }: TextAreaProps) => {
+const TextArea: FC<TextAreaProps> = ({
+  onChange,
+  value,
+  placeholder,
+}: TextAreaProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
 
@@ -70,7 +75,7 @@ const TextArea: FC<TextAreaProps> = ({ onChange, value }: TextAreaProps) => {
       <TextAreaInput
         ref={input}
         onChange={handleInput}
-        placeholder="Comment"
+        placeholder={placeholder}
         value={value}
       />
     </TextAreaContent>

@@ -47,6 +47,19 @@ export const getSubredditsList = async (): Promise<Subreddit[]> => {
       newSubreddit.categories = [];
       isModified = true;
     }
+    if (typeof subreddit.defaults === "undefined") {
+      newSubreddit.defaults = {
+        tags: [],
+        flair: null,
+        title: ""
+      };
+      isModified = true;
+    }
+
+    if (typeof subreddit.pivixTags === "undefined") {
+      newSubreddit.pivixTags = [];
+      isModified = true;
+    }
 
     // remove the subreddit if any of these are bad
     if (typeof subreddit.info.isCrosspostable === "undefined" || typeof subreddit.info.isNSFW === "undefined" || typeof subreddit.info.isNSFW === "undefined" || typeof subreddit.info.flairs === "undefined") {
@@ -60,10 +73,8 @@ export const getSubredditsList = async (): Promise<Subreddit[]> => {
     } else
       newSubreddits.push(newSubreddit);
   }
-  console.log(isModified);
 
   if (isModified) {
-    console.log("modifiying");
     setSubredditsList(newSubreddits);
   }
   return newSubreddits;

@@ -77,8 +77,6 @@ export const getSubbredditAbout = async (subredditName: string): Promise<Subredd
   const aboutRaw = (await reddit.get<SubredditAboutRaw>(`/r/${subredditName}/about.json`)).data;
   return {
     url: aboutRaw.url,
-    allowsVideoGifs: aboutRaw.allow_videogifs,
-    allowsVideos: aboutRaw.allow_videos,
     isCrosspostable: aboutRaw.is_crosspostable_subreddit,
     isNSFW: aboutRaw.over18
   };
@@ -105,7 +103,6 @@ export const getFlairsBySubbreddit = async (subredditName: string): Promise<Subr
   }
 };
 export const submitPost = async (postRequest: SubmitRequest): Promise<string> => {
-
   const agent = new https.Agent({
     rejectUnauthorized: false,
   });
@@ -139,6 +136,9 @@ export const submitPost = async (postRequest: SubmitRequest): Promise<string> =>
   // upload the image
   await fetch(uploadURL, {
     method: "POST",
+    // ignore the error on thie line because it works and fetch is just being dumb asf
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    //@ts-ignore
     body: formdata,
   });
 
@@ -153,15 +153,14 @@ export const submitPost = async (postRequest: SubmitRequest): Promise<string> =>
       WebSocketClient.on("connect", connection => {
         connection.on("message", (message) => {
           const msg = message as PostUploadedImageWSMessage;
-          connection.close();
           const parsedUTF8Data = JSON.parse(msg.utf8Data) as ParsedUTF8Data;
+          connection.close();
           resolve(parsedUTF8Data.payload.redirect);
         });
         connection.on("error", err => {
           reject(err);
         });
       });
-
     });
   };
 

@@ -40,9 +40,17 @@ export interface PixivTag {
   link: string;
 }
 
+export interface SubredditDefaults {
+  title: string;
+  flair: SubredditFlair | null;
+  tags: Tags[];
+}
+
 export interface Subreddit {
   name: string;
   info: SubredditInfo;
+  pivixTags: PixivTag[];
+  defaults: SubredditDefaults;
   categories: string[];
   notes: string;
 }
@@ -72,7 +80,7 @@ export interface Post {
 
 export interface PostTemplate {
   subreddit: Subreddit;
-  flair?: SubredditFlair;
+  flair: SubredditFlair | null;
   tags: Tags[];
   title: string;
 }

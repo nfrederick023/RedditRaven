@@ -13,7 +13,6 @@ import {
   Tags,
 } from "@client/utils/types";
 import Gradient from "@client/components/common/shared/gradient";
-import Link from "next/link";
 import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";
 import Select from "@client/components/common/shared/select";
@@ -22,6 +21,10 @@ import TextArea from "@client/components/common/shared/text-area";
 import TextField from "@client/components/common/shared/text-field";
 import dayjs, { Dayjs } from "dayjs";
 import styled from "styled-components";
+
+const SearchHeaderWrapper = styled.div`
+  margin: 10px 0px 5px 0px;
+`;
 
 const DashboardContent = styled.div`
   text-align: left;
@@ -37,10 +40,29 @@ const SearchResult = styled.div`
   padding-bottom: 5px;
 `;
 
+const Button = styled.div`
+  border: 1px solid ${(p): string => p.theme.textContrast};
+  border-radius: 5px;
+  padding: 6px;
+  padding-top: 5px;
+  max-height: 32px;
+
+  transition: all 0.1s ease-in;
+  user-select: none;
+
+  color: ${(p): string => p.theme.textContrast};
+
+  &:hover {
+    cursor: pointer;
+    border-color: ${(p): string => p.theme.text};
+    color: ${(p): string => p.theme.text};
+  }
+`;
+
 const Icon = styled.div`
   border: 1px solid ${(p): string => p.theme.textContrast};
   border-radius: 5px;
-  padding: 5px;
+  padding: 6px;
   transition: all 0.1s ease-in;
   user-select: none;
   display: inline-block;
@@ -67,14 +89,14 @@ const FlexWrapper = styled.div`
 const DetailsWrapper = styled.div`
   margin: 5px 0px 10px 0px;
   display: flex;
-
+  white-space: pre;
   > div {
     margin-right: 5px;
   }
 `;
 
 const DetailsOptions = styled.div`
-  width: 10%;
+  width: 13%;
   align-items: center;
   display: flex;
   overflow: hidden;
@@ -108,6 +130,7 @@ const DetailsTags = styled.div`
   width: 25%;
   align-self: center;
   display: flex;
+  white-space: pre;
   > div {
     width: 100%;
   }
@@ -118,7 +141,7 @@ const ButtonBase = styled.div`
 `;
 
 const ApplyAllButton = styled(ButtonBase)`
-  width: 150px;
+  width: 20%;
 `;
 
 const CreditButtons = styled(ButtonBase)``;
@@ -131,7 +154,7 @@ const ClearButton = styled(ButtonBase)`
 
 const InputFields = styled.div`
   margin: 8px 5px 0px 0px;
-  width: 70%;
+  width: 80%;
 `;
 
 const InputFieldMax = styled.div`
@@ -263,6 +286,10 @@ const CheckboxLabel = styled.label`
   user-select: none;
 `;
 
+const InputText = styled.div`
+  margin: 8px 5px 0px 0px;
+`;
+
 const getSource = async (body: FormData): Promise<PixivDetails | undefined> => {
   const response = await fetch("/api/sourceImage", {
     method: "POST",
@@ -317,13 +344,15 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [preview, setPreview] = useState(true);
   const [pixivDetails, setPixivDetails] = useState<PixivDetails>();
   const [clearOnPost, setClearOnPost] = useState(true);
+  const [tagPage, setTagPage] = useState("1");
+  const [displayPixivTags, setDisplayPixivTags] = useState(false);
 
   const createPostTemplate = (subreddit: Subreddit): PostTemplate => {
     return {
       subreddit: subreddit,
-      title: "",
-      flair: undefined,
-      tags: [],
+      title: subreddit.defaults.title,
+      flair: subreddit.defaults.flair,
+      tags: subreddit.defaults.tags,
     };
   };
 
@@ -350,7 +379,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       );
       setPostTemplates(
         postTemplates.map((post) => {
-          if (post.subreddit === subreddit) post.flair = flair;
+          if (post.subreddit === subreddit) post.flair = flair ? flair : null;
           return post;
         })
       );
@@ -404,7 +433,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const handleApplyAllTitle = (): void => {
     setPostTemplates(
       postTemplates.map((post) => {
-        post.title = globalTitle;
+        post.title = post.title + globalTitle;
         return post;
       })
     );
@@ -485,6 +514,19 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handlePostNowChange = (): void => {
     setPostNow(!postNow);
+  };
+
+  const viewNote = (subreddit: Subreddit) => (): void => {
+    alert(subreddit.notes);
+  };
+
+  const handleTagPageChange = (tagPage: string): void => {
+    if ((!isNaN(Number(tagPage)) && Number(tagPage) > 0) || tagPage === "")
+      setTagPage(tagPage);
+  };
+
+  const handleDisplayPixivTagsChange = (): void => {
+    setDisplayPixivTags(!displayPixivTags);
   };
 
   const createPost = (): void => {
@@ -610,15 +652,23 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
               <hr />
               <FlexWrapper>
                 <h4>Artist: </h4>
-                <Link href={pixivDetails?.artistLink || ""}>
+                <a
+                  href={pixivDetails?.artistLink || ""}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {pixivDetails?.artist || ""}
-                </Link>
+                </a>
               </FlexWrapper>
               <FlexWrapper>
                 <h4>PixivID: </h4>
-                <Link href={pixivDetails?.pixivLink || ""}>
+                <a
+                  href={pixivDetails?.pixivLink || ""}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {pixivDetails?.pixivID || ""}
-                </Link>
+                </a>
               </FlexWrapper>
               <FlexWrapper>
                 <h4>Title: </h4>
@@ -630,9 +680,13 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
               {pixivDetails?.description?.substring(0, 100)}
               {imgurl && (
                 <FlexWrapper>
-                  <Link href={pixivDetails?.imageLink || ""}>
+                  <a
+                    href={pixivDetails?.imageLink || ""}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Link to Image
-                  </Link>
+                  </a>
                 </FlexWrapper>
               )}
             </ImageDetails>
@@ -651,20 +705,22 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           paginationFilter={paginationFilter}
           subreddits={subreddits}
           resultsPerPageOptions={resultsPerPageOptions}
-          intialResultsPerPage={resultsPerPageOptions[2]}
+          intialResultsPerPage={resultsPerPageOptions[1]}
         />
-        <FlexWrapper>
-          <DetailsOptions>
-            <h4>Options</h4>
-          </DetailsOptions>
-          <DetailsFlair>
-            <h4>Subreddit</h4>
-          </DetailsFlair>
+        <SearchHeaderWrapper>
+          <FlexWrapper>
+            <DetailsOptions>
+              <h4>Options</h4>
+            </DetailsOptions>
+            <DetailsFlair>
+              <h4>Subreddit</h4>
+            </DetailsFlair>
 
-          <DetailsTags>
-            <h4>Tags</h4>
-          </DetailsTags>
-        </FlexWrapper>
+            <DetailsTags>
+              <h4>Pixiv Tags</h4>
+            </DetailsTags>
+          </FlexWrapper>
+        </SearchHeaderWrapper>
         {paginatedResults.length ? (
           <>
             {paginatedResults.map((subreddit, i) => {
@@ -691,12 +747,63 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                         title="Open in New Tab"
                       />
                     </a>
+                    <Icon
+                      className="bx bx-note"
+                      onClick={viewNote(subreddit)}
+                      title={subreddit.notes}
+                    />
                   </DetailsOptions>
                   <DetailsFlair>{subreddit.name}</DetailsFlair>
+                  {subreddit.pivixTags.length ? (
+                    <DetailsTags>
+                      {"[ "}
+                      {subreddit.pivixTags.map((tag, i) => {
+                        return (
+                          <span key={i}>
+                            <a
+                              href={
+                                tag.link +
+                                "/artworks?p=" +
+                                (tagPage ? tagPage : 1)
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {tag.enName}
+                            </a>
+                            {i !== subreddit.pivixTags.length - 1 && " | "}
+                          </span>
+                        );
+                      })}
+                      {" ]"}
+                    </DetailsTags>
+                  ) : (
+                    <></>
+                  )}
                 </SearchResult>
               );
             })}
-            <Icon onClick={handleAddAll}>Add All</Icon>
+            <Button onClick={handleAddAll}>Add All</Button>
+            <FlexWrapper>
+              <InputText>
+                <ButtonBase>Tag Page:</ButtonBase>
+              </InputText>
+              <InputText>
+                <TextField
+                  onChange={handleTagPageChange}
+                  value={tagPage}
+                  placeholder="Page No."
+                />
+              </InputText>
+              <CheckboxLabel>
+                <Checkbox
+                  type="checkbox"
+                  checked={displayPixivTags}
+                  onChange={handleDisplayPixivTagsChange}
+                />
+                Display Pixiv Tags in Details
+              </CheckboxLabel>
+            </FlexWrapper>
           </>
         ) : (
           <NoSearchResults>No Subreddits Found!</NoSearchResults>
@@ -726,70 +833,110 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           <>
             {postTemplates.map((post, i) => {
               return (
-                <DetailsWrapper key={i}>
-                  <DetailsOptions>
-                    <Icon
-                      className="bx bx-x"
-                      onClick={handleRemoveSubreddit(post.subreddit)}
-                      title="Unselect"
-                    />
-                    <Icon
-                      className="bx bx-link"
-                      onClick={copyLink(post.subreddit.name)}
-                      title="Copy Link"
-                    />
-                    <a
-                      href={"https://www.reddit.com" + post.subreddit.info.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                <span key={i}>
+                  <DetailsWrapper>
+                    <DetailsOptions>
                       <Icon
-                        className="bx bx-link-external"
-                        title="Open in New Tab"
+                        className="bx bx-x"
+                        onClick={handleRemoveSubreddit(post.subreddit)}
+                        title="Unselect"
                       />
-                    </a>
-                  </DetailsOptions>
-                  <DetailsSubreddit>{post.subreddit.name}</DetailsSubreddit>
-                  <DetailsFlair>
-                    {post.subreddit.info.flairs.length ? (
+                      <Icon
+                        className="bx bx-link"
+                        onClick={copyLink(post.subreddit.name)}
+                        title="Copy Link"
+                      />
+                      <a
+                        href={
+                          "https://www.reddit.com" + post.subreddit.info.url
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <Icon
+                          className="bx bx-link-external"
+                          title="Open in New Tab"
+                        />
+                      </a>
+                      <Icon
+                        className="bx bx-note"
+                        onClick={viewNote(post.subreddit)}
+                        title={post.subreddit.notes}
+                      />
+                    </DetailsOptions>
+                    <DetailsSubreddit>{post.subreddit.name}</DetailsSubreddit>
+                    <DetailsFlair>
+                      {post.subreddit.info.flairs.length ? (
+                        <Select
+                          options={post.subreddit.info.flairs.map(
+                            (flair) => flair.name
+                          )}
+                          value={post.flair?.name || ""}
+                          onChange={handleFlairChange(post.subreddit)}
+                          isClearable
+                        />
+                      ) : (
+                        <GreyText>No Flair</GreyText>
+                      )}
+                    </DetailsFlair>
+                    <DetailsTags>
                       <Select
-                        options={post.subreddit.info.flairs.map(
-                          (flair) => flair.name
-                        )}
-                        value={post.flair?.name || ""}
-                        onChange={handleFlairChange(post.subreddit)}
+                        options={tagOptions}
+                        onChange={handleTagChange(post.subreddit)}
+                        value={post.tags}
+                        isMulti
+                        isClearable
                       />
-                    ) : (
-                      <GreyText>No Flair</GreyText>
-                    )}
-                  </DetailsFlair>
-                  <DetailsTags>
-                    <Select
-                      options={tagOptions}
-                      onChange={handleTagChange(post.subreddit)}
-                      value={post.tags}
-                      isMulti
-                      isClearable
-                    />
-                  </DetailsTags>
-                  <DetailsTitle>
-                    <TextField
-                      onChange={handleTitleChange(post.subreddit)}
-                      value={post.title}
-                      placeholder="Title"
-                    />
-                  </DetailsTitle>
-                </DetailsWrapper>
+                    </DetailsTags>
+                    <DetailsTitle>
+                      <TextField
+                        onChange={handleTitleChange(post.subreddit)}
+                        value={post.title}
+                        placeholder="Title"
+                      />
+                    </DetailsTitle>
+                  </DetailsWrapper>
+                  {post.subreddit.pivixTags.length && displayPixivTags ? (
+                    <DetailsWrapper>
+                      <h5>Pixiv Tags: </h5>
+                      <DetailsTags>
+                        {"[ "}
+                        {post.subreddit.pivixTags.map((tag, i) => {
+                          return (
+                            <span key={i}>
+                              <a
+                                href={
+                                  tag.link +
+                                  "/artworks?p=" +
+                                  (tagPage ? tagPage : 1)
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {tag.enName}
+                              </a>
+                              {i !== post.subreddit.pivixTags.length - 1 &&
+                                " | "}
+                            </span>
+                          );
+                        })}
+                        {" ]"}
+                      </DetailsTags>
+                    </DetailsWrapper>
+                  ) : (
+                    <></>
+                  )}
+                </span>
               );
             })}
           </>
         ) : (
           <NoSubreddits>No Subreddits Selected...</NoSubreddits>
         )}
-        <Icon onClick={handleRemoveAll()}>Remove All</Icon>
+        <Button onClick={handleRemoveAll()}>Remove All</Button>
         <FlexWrapper>
           <ApplyAllButton>
-            <Icon onClick={handleApplyAllTitle}>Apply Title to All</Icon>
+            <Button onClick={handleApplyAllTitle}>Add to All Title</Button>
           </ApplyAllButton>
           <InputFields>
             <TextField
@@ -801,7 +948,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         </FlexWrapper>
         <FlexWrapper>
           <ApplyAllButton>
-            <Icon onClick={handleApplyAllTags}>Apply Tags to All</Icon>
+            <Button onClick={handleApplyAllTags}>Apply Tags to All</Button>
           </ApplyAllButton>
           <InputFields>
             <Select
@@ -814,21 +961,25 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           </InputFields>
         </FlexWrapper>
         <CreditButtons>
-          <Icon onClick={handleCreditArtistInTitle}>
+          <Button onClick={handleCreditArtistInTitle}>
             Credit Artist All Titles
-          </Icon>
+          </Button>
         </CreditButtons>
         <Divider />
         <h4>Comment</h4>
         <CommentWrapper>
-          <TextArea onChange={handleCommentChange} value={comment} />
+          <TextArea
+            onChange={handleCommentChange}
+            value={comment}
+            placeholder={"Comment..."}
+          />
         </CommentWrapper>
         <FlexWrapper>
           <CreditButtons>
-            <Icon onClick={handleAddSource}>Add Source</Icon>
+            <Button onClick={handleAddSource}>Add Source</Button>
           </CreditButtons>
           <CreditButtons>
-            <Icon onClick={handleCreditArtist}>Credit Artist</Icon>
+            <Button onClick={handleCreditArtist}>Credit Artist</Button>
           </CreditButtons>
           <CheckboxLabel>
             <Checkbox
@@ -839,7 +990,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             Default Include Source
           </CheckboxLabel>
           <ClearButton>
-            <Icon onClick={handleClearComment}>Clear</Icon>
+            <Button onClick={handleClearComment}>Clear</Button>
           </ClearButton>
         </FlexWrapper>
         <Divider />
@@ -869,7 +1020,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           </LocalizationProvider>
         </NoSSR>
         <CreditButtons>
-          <Icon onClick={createPost}>Create Post</Icon>
+          <Button onClick={createPost}>Create Post</Button>
         </CreditButtons>
         <CheckboxLabel>
           <Checkbox

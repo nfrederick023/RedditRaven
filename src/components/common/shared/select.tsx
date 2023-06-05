@@ -201,7 +201,7 @@ const Select: FC<SelectProps> = ({
         isFocused={isOpen}
       >
         <SelectedBox>
-          {value.length ? (
+          {value?.length ? (
             <>
               {isMulti ? (
                 <>

@@ -5,7 +5,7 @@ import { getSubredditsList, setSubredditsList } from "@server/utils/config";
 
 const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
-  if (req.method !== "POST" && req.method !== "DELETE") {
+  if (req.method !== "POST" && req.method !== "DELETE" && req.method !== "PUT") {
     res.status(405).json({ message: "Method not allowed" });
     return;
   }
@@ -17,7 +17,7 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
       return;
     }
 
-    const subredditList = getSubredditsList();
+    const subredditList = await getSubredditsList();
 
     if (subredditList.find(subreddit => subreddit.name === name)) {
       res.status(400).json({ message: "Subreddit is already in the list!" });
@@ -30,6 +30,12 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
       name,
       categories: [],
       notes: "",
+      defaults: {
+        title: "",
+        tags: [],
+        flair: null
+      },
+      pivixTags: [],
       info: { flairs, ...about },
     };
 
@@ -46,7 +52,7 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
       return;
     }
 
-    const subredditList = getSubredditsList();
+    const subredditList = await getSubredditsList();
 
     if (!subredditList.find(subreddit => subreddit.name === name)) {
       res.status(400).json({ message: "Subreddit isn't in the list!" });
@@ -58,6 +64,17 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
     res.status(200).send(newSubredditList);
     return;
   }
+
+  if (req.method === "PUT") {
+    const subreddits: Subreddit[] = JSON.parse(req.body)?.subreddits;
+    try {
+      setSubredditsList(subreddits);
+      res.status(200).end();
+    } catch (e) {
+      res.status(500).json({ message: "Failed to save subreddits." });
+    }
+  }
+  return;
 };
 
 export default addSubreddit;

@@ -1,14 +1,14 @@
 import * as https from "https";
-import { PixivDetails } from "@client/utils/types";
+import { PixivDetails, PixivTag } from "@client/utils/types";
 import fetch from "node-fetch";
 
 interface PixivImageTags {
   authorId: string;
   isLocked: boolean;
-  tags: PixivTag[];
+  tags: PixivImageTag[];
 }
 
-interface PixivTag {
+interface PixivImageTag {
   tag: string;
   locked: boolean;
   deletable: boolean;
@@ -56,6 +56,24 @@ interface ExpandedIllustrationDetails extends IllustrationDetails {
   isBookmarkable: boolean;
   isUnlisted: boolean;
   commentOff: 0,
+}
+
+interface PixivTagLangTranslations {
+  en: string;
+  romaji: string;
+}
+
+interface PixivTagTranslation {
+  [key: string]: PixivTagLangTranslations;
+}
+
+interface PixivTagDetailsBody {
+  tag: string;
+  tagTranslation: PixivTagTranslation;
+}
+
+interface PixivTagDetails {
+  body: PixivTagDetailsBody
 }
 
 export interface PixivIllustDetails {
@@ -119,4 +137,24 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
   }
 
   return {};
+};
+
+export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined> => {
+  const response = await fetch("https://www.pixiv.net/ajax/search/tags/" + tagName, {
+    method: "GET",
+    headers: { "accept-language": "en-US" }
+  });
+
+  if (response.ok) {
+    const res = await response.json() as PixivTagDetails;
+    const translationEN = Object.values(res.body.tagTranslation)[0]?.en;
+    const translationRomaji = Object.values(res.body.tagTranslation)[0]?.romaji;
+    const pixivTag: PixivTag = {
+      jpName: res.body.tag,
+      enName: translationEN ? translationEN : translationRomaji ? translationRomaji : res.body.tag,
+      link: "https://www.pixiv.net/tags/" + res.body.tag
+    };
+
+    return pixivTag;
+  }
 };
