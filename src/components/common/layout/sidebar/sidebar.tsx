@@ -22,12 +22,10 @@ const SidebarWapper = styled.div`
     min-width: 100%;
     height: 100%;
 
-    ${(props: { isCollapsed: boolean }): string =>
-      props.isCollapsed ? "min-width: 60px; left: -60px;" : ""}
+    ${(props: { isCollapsed: boolean }): string => (props.isCollapsed ? "min-width: 60px; left: -60px;" : "")}
   }
 
-  ${(props: { isCollapsed: boolean }): string =>
-    props.isCollapsed ? "max-width: 48px; min-width: 48px;" : ""}
+  ${(props: { isCollapsed: boolean }): string => (props.isCollapsed ? "max-width: 48px; min-width: 48px;" : "")}
 `;
 
 const SidebarContent = styled.div`
@@ -117,10 +115,7 @@ const Sidebar: FC = () => {
       <NoSSR>
         <SidebarWapper isCollapsed={isCollapsed}>
           {width <= screenSizes.tabletScreenSize ? (
-            <BarsIcon
-              onClick={handleIsCollapsedChange}
-              className="bx bx-menu bx-lg"
-            />
+            <BarsIcon onClick={handleIsCollapsedChange} className="bx bx-menu bx-lg" />
           ) : (
             <MinimizeButton>
               <ArrowIconContainer>
@@ -137,29 +132,14 @@ const Sidebar: FC = () => {
                   </Gradient>
                   <h1>RAVEN</h1>
                 </Logo>
-                <PageButton
-                  title={"Dashboard"}
-                  icon={"bx bxs-dashboard"}
-                  url={"/"}
-                />
+                <PageButton title={"Post"} icon={"bx bxs-dashboard"} url={"/"} />
+                <PageButton title={"Classic"} icon={"bx bxs-cube"} url={"/classic"} />
 
-                <PageButton
-                  title={"Schedule"}
-                  icon={"bx bx-time"}
-                  url={"/schedule"}
-                />
+                <PageButton title={"Schedule"} icon={"bx bx-time"} url={"/schedule"} />
 
-                <PageButton
-                  title={"Subreddits"}
-                  icon={"bx bx-list-ul"}
-                  url={"/subreddits"}
-                />
+                <PageButton title={"Subreddits"} icon={"bx bx-list-ul"} url={"/subreddits"} />
 
-                <PageButton
-                  title={"Stats"}
-                  icon={"bx bx-stats"}
-                  url={"/stats"}
-                />
+                <PageButton title={"Stats"} icon={"bx bx-stats"} url={"/stats"} />
               </>
             )}
           </SidebarContent>

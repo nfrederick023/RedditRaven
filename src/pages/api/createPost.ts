@@ -20,11 +20,16 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     const postRequest: SubmitRequest = {
       title: postDetail.title,
       url: post.imageLink,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-ignore
+      api_type: "json",
       sr: postDetail.subreddit.name,
+      submit_type: "subreddit",
       nsfw: postDetail.tags.includes("NSFW"),
       flair_id: postDetail.flair?.id,
-      kind: "link",
-      sendreplies: true
+      kind: "image",
+      sendreplies: true,
+      validate_on_submit: true
     };
 
     const postResponse = await submitPost(postRequest);

@@ -191,7 +191,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
     setNewSubreddit(subredditName);
   };
 
-  const handleAddSubreddit = () => async (): Promise<void> => {
+  const handleAddSubreddit = async (): Promise<void> => {
     if (!newSubreddit) {
       alert("You must enter a subreddit name!");
       return;

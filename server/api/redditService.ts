@@ -116,6 +116,7 @@ export const submitPost = async (postRequest: SubmitRequest): Promise<string> =>
       referrer: "https://www.pixiv.net/",
     }
   );
+
   const mimetype = imageResponse.headers.get("content-type") ?? "";
   const buffer = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
 
@@ -145,7 +146,6 @@ export const submitPost = async (postRequest: SubmitRequest): Promise<string> =>
   const WebSocketClient = new WebSocket.client;
   const uploadedImageLink = uploadURL + "/" + uploadResponse.args.fields.find(item => item.name === "key")?.value;
   const websocket_url = uploadResponse.asset.websocket_url;
-
   // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
   WebSocketClient.connect(websocket_url);
   const getURL = (): Promise<string> => {
@@ -163,7 +163,6 @@ export const submitPost = async (postRequest: SubmitRequest): Promise<string> =>
       });
     });
   };
-
   postRequest.url = uploadedImageLink;
 
   // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible

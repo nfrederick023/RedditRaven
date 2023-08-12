@@ -42,9 +42,7 @@ const PageButton = styled.div`
     color: ${(p): string => p.theme.text};
   }
   ${(p: { isSelected: boolean; theme: BluJayTheme }): string =>
-    p.isSelected
-      ? `border: 1px solid ${p.theme.text}; color: ${p.theme.text};`
-      : ""};
+    p.isSelected ? `border: 1px solid ${p.theme.text}; color: ${p.theme.text};` : ""};
 `;
 
 const ResultsPerPageWrapper = styled.div`
@@ -58,6 +56,7 @@ interface SubredditSearchProps {
   paginatedResults: Subreddit[];
   resultsPerPageOptions: string[];
   intialResultsPerPage: string;
+  showAll?: boolean;
   setPaginatedResults: React.Dispatch<React.SetStateAction<Subreddit[]>>;
   paginationFilter?: (result: Subreddit) => boolean;
 }
@@ -70,25 +69,20 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
   intialResultsPerPage,
   setPaginatedResults,
   paginationFilter,
+  showAll,
 }: SubredditSearchProps) => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<Subreddit[]>([]);
-  const [resultsPerPage, setResultsPerPage] = useState(
-    Number(intialResultsPerPage)
-  );
+  const [resultsPerPage, setResultsPerPage] = useState(Number(showAll ? subreddits.length : intialResultsPerPage));
   const [currentPage, setCurrentPage] = useState(0);
   const [search, setSearch] = useState("");
 
   const getSearchResults = (): Subreddit[] => {
     return subreddits.filter((subreddit) => {
-      const searchFilter = subreddit.name
-        .toLowerCase()
-        .includes(search.toLowerCase());
+      const searchFilter = subreddit.name.toLowerCase().includes(search.toLowerCase());
 
       const categoryFilter = selectedCategories.length
-        ? selectedCategories.some((selectedCategory) =>
-            subreddit.categories.includes(selectedCategory)
-          )
+        ? selectedCategories.some((selectedCategory) => subreddit.categories.includes(selectedCategory))
         : true;
 
       return searchFilter && categoryFilter;
@@ -116,19 +110,14 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
   };
 
   const numberOfPages = Math.ceil(
-    (searchResults.length - (numberOfSelected || 0)) /
-      (resultsPerPage ? resultsPerPage : 1)
+    (searchResults.length - (numberOfSelected || 0)) / (resultsPerPage ? resultsPerPage : 1)
   );
 
-  if (currentPage !== 0 && currentPage > numberOfPages - 1)
-    setCurrentPage(numberOfPages - 1);
+  if (currentPage !== 0 && currentPage > numberOfPages - 1) setCurrentPage(numberOfPages - 1);
 
   let categories: string[] = [];
 
-  subreddits.forEach(
-    (subreddit) =>
-      (categories = [...new Set([...categories, ...subreddit.categories])])
-  );
+  subreddits.forEach((subreddit) => (categories = [...new Set([...categories, ...subreddit.categories])]));
 
   const paginateResults = (): void => {
     let searchResultsSlice = getSearchResults();
@@ -146,10 +135,7 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
       return !paginatedResults.includes(result);
     });
 
-    if (
-      updatePagination.length ||
-      searchResultsSlice.length !== paginatedResults.length
-    )
+    if (updatePagination.length || searchResultsSlice.length !== paginatedResults.length)
       setPaginatedResults(searchResultsSlice);
   };
 
@@ -170,37 +156,33 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
         </FilterName>
         <FilterCategory>
           Category
-          <Select
-            options={categories}
-            onChange={handleCategoryChange}
-            value={selectedCategories}
-            isMulti
-            isClearable
-          />
+          <Select options={categories} onChange={handleCategoryChange} value={selectedCategories} isMulti isClearable />
         </FilterCategory>
       </Filter>
-      Results
-      <PageButtonContainer>
-        {[...new Array(numberOfPages)].map((undef, i) => {
-          return (
-            <PageButton
-              key={i}
-              isSelected={i === currentPage}
-              onClick={handlePageChange(i)}
-            >
-              {i + 1}
-            </PageButton>
-          );
-        })}
-        <ResultsPerPageWrapper>
-          <Select
-            options={resultsPerPageOptions}
-            onChange={handleResultsPerPageChange}
-            value={resultsPerPage.toString()}
-            defaultSelected={resultsPerPage.toString()}
-          />
-        </ResultsPerPageWrapper>
-      </PageButtonContainer>
+      {!showAll ? (
+        <>
+          Results
+          <PageButtonContainer>
+            {[...new Array(numberOfPages)].map((undef, i) => {
+              return (
+                <PageButton key={i} isSelected={i === currentPage} onClick={handlePageChange(i)}>
+                  {i + 1}
+                </PageButton>
+              );
+            })}
+            <ResultsPerPageWrapper>
+              <Select
+                options={resultsPerPageOptions}
+                onChange={handleResultsPerPageChange}
+                value={resultsPerPage.toString()}
+                defaultSelected={resultsPerPage.toString()}
+              />
+            </ResultsPerPageWrapper>
+          </PageButtonContainer>
+        </>
+      ) : (
+        <></>
+      )}
     </>
   );
 };
