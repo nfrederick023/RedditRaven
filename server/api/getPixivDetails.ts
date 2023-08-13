@@ -103,13 +103,19 @@ export interface PixivIllustDetails {
 }
 
 const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
-  const response = await fetch("https://www.pixiv.net/ajax/illust/" + pixivID, {
-    method: "GET",
-    signal: AbortSignal.timeout(120000)
-  });
+  try {
+    const response = await fetch("https://www.pixiv.net/ajax/illust/" + pixivID, {
+      method: "GET",
+      signal: AbortSignal.timeout(120000)
+    });
 
-  if (response.ok)
-    return await response.json() as PixivIllustDetails;
+    if (response.ok)
+      return await response.json() as PixivIllustDetails;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("Failed to get images: " + pixivID);
+    return undefined;
+  }
 };
 
 export const getImageURL = async (baseURL: string, pixivID: string, frame: string): Promise<string> => {
@@ -214,7 +220,7 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
 
     promises.forEach(promise => { if (promise) illusts.push(promise); });
 
-    const suggestedImages = illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 29);
+    const suggestedImages = illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 12);
     return { suggestedImages };
   }
 };

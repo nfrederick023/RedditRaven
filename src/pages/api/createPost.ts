@@ -48,7 +48,7 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   subreddits.map(subreddit => {
     const matchingPost = posts.find(post => post.subreddit.name === subreddit.name);
     if (matchingPost) {
-      subreddit.currentPage = (Number(matchingPost.subreddit.currentPage) + 1) + "";
+      subreddit.currentPage = Number(matchingPost.subreddit.currentPage) + "";
     }
     return subreddit;
   });

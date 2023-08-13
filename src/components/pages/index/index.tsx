@@ -168,6 +168,33 @@ const CurentPageWrapper = styled(DetailsWrapper)`
   margin-left: auto;
 `;
 
+const Spinner = styled.div`
+  @keyframes spin {
+    from {
+      transform: rotate(0);
+    }
+    to {
+      transform: rotate(359deg);
+    }
+  }
+
+  width: 50px;
+  height: 50px;
+  border: 3px solid #fb5b53;
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 0.5s linear 0s infinite;
+`;
+
+const SpinnerBox = styled.div`
+  width: 450px;
+  height: 450px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+`;
+
 const getSuggestedImages = async (suggestedImagesReq: SuggestedImagesReq): Promise<SuggestedImages | undefined> => {
   const response = await fetch("/api/suggestedImages", {
     method: "POST",
@@ -209,28 +236,41 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const createPosts = async (): Promise<void> => {
     const slice = 0;
 
-    const newPosts = await Promise.all(
-      paginatedResults.map(async (subreddit) => {
-        let suggestedImages: PixivDetails[] = [];
-
-        if (subreddit.defaults.pixivTag) {
-          suggestedImages = await retrieveSuggestedImages(subreddit.defaults.pixivTag, subreddit.currentPage, slice);
-        }
-
-        return {
-          subreddit: subreddit,
-          selectedImage: undefined,
-          flair: subreddit.defaults.flair,
-          isNSFW: false,
-          usesDefaultComment: true,
-          comment: "",
-          title: subreddit.defaults.title,
-          suggestedImages,
-          slice,
-        };
-      })
-    );
+    const newPosts = paginatedResults.map((subreddit): Post => {
+      return {
+        subreddit: subreddit,
+        selectedImage: undefined,
+        flair: subreddit.defaults.flair,
+        isNSFW: false,
+        usesDefaultComment: true,
+        comment: "",
+        title: subreddit.defaults.title,
+        suggestedImages: [],
+        slice,
+        isLoading: true,
+      };
+    });
     setPosts(newPosts);
+
+    setPosts(
+      await Promise.all(
+        newPosts.map(async (newPost) => {
+          let suggestedImages: PixivDetails[] = [];
+
+          if (newPost.subreddit.defaults.pixivTag) {
+            suggestedImages = await retrieveSuggestedImages(
+              newPost.subreddit.defaults.pixivTag,
+              newPost.subreddit.currentPage,
+              slice
+            );
+          }
+
+          newPost.suggestedImages = suggestedImages;
+          newPost.isLoading = false;
+          return newPost;
+        })
+      )
+    );
   };
 
   const retrieveSuggestedImages = async (pixivTag: PixivTag, page: string, slice: number): Promise<PixivDetails[]> => {
@@ -269,7 +309,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const increaseSlice = (post: Post) => (): void => {
-    if (post.slice + 1 * 3 <= 60) getNewSlice(post, post.slice + 1);
+    if (post.slice + 1 <= 2) getNewSlice(post, post.slice + 1);
   };
 
   const decreaseSlice = (post: Post) => (): void => {
@@ -358,13 +398,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     };
   };
 
-  const updatePage = (newValue: string, subreddit: Subreddit): void => {
-    const newPosts = [...posts];
-    const postIndex = newPosts.findIndex((post) => post.subreddit.name === subreddit.name);
-    newPosts[postIndex] = { ...newPosts[postIndex], subreddit: { ...subreddit, currentPage: newValue } };
-    setPosts(newPosts);
-  };
-
   const minusPage = (post: Post) => (): void => {
     const newPage = Number(post.subreddit.currentPage) - 1 + "";
     goToPage(post, newPage)();
@@ -377,6 +410,15 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const goToPage = (post: Post, page: string) => async (): Promise<void> => {
     if (post.subreddit.defaults.pixivTag) {
+      setPosts(
+        posts.map((_post) => {
+          if (_post.subreddit.name === post.subreddit.name) {
+            _post.isLoading = true;
+          }
+          return _post;
+        })
+      );
+
       const suggestedImages = await retrieveSuggestedImages(post.subreddit.defaults.pixivTag, page, post.slice);
 
       setPosts(
@@ -384,6 +426,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           if (_post.subreddit.name === post.subreddit.name) {
             _post.suggestedImages = suggestedImages;
             _post.subreddit = { ..._post.subreddit, currentPage: page };
+            _post.isLoading = false;
           }
           return _post;
         })
@@ -528,16 +571,24 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                         </CurentPageWrapper>
                       </DetailsWrapperBottom>
                       <ImagePreviewWrapper>
-                        {post.suggestedImages.slice(post.slice * 4, post.slice * 4 + 4).map((image, i) => {
-                          return (
-                            <ImagePreview
-                              key={i}
-                              src={image.imageBlob}
-                              onClick={handleImageChange(post.subreddit, image)}
-                              isSelected={post.selectedImage?.imageLink === image.imageLink}
-                            />
-                          );
-                        })}
+                        {post.isLoading ? (
+                          <SpinnerBox>
+                            <Spinner />
+                          </SpinnerBox>
+                        ) : (
+                          <>
+                            {post.suggestedImages.slice(post.slice * 4, post.slice * 4 + 4).map((image, i) => {
+                              return (
+                                <ImagePreview
+                                  key={i}
+                                  src={image.imageBlob}
+                                  onClick={handleImageChange(post.subreddit, image)}
+                                  isSelected={post.selectedImage?.imageLink === image.imageLink}
+                                />
+                              );
+                            })}
+                          </>
+                        )}
                       </ImagePreviewWrapper>
                       <DetailsWrapper>
                         <DetailsTitle>

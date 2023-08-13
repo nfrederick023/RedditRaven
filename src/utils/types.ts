@@ -89,6 +89,7 @@ export interface Post {
   slice: number;
   comment: string;
   title: string;
+  isLoading: boolean;
 }
 
 export interface ClassicPost {
