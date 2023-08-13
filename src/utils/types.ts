@@ -44,14 +44,17 @@ export interface SubredditDefaults {
   title: string;
   flair: SubredditFlair | null;
   tags: Tags[];
+  pixivTag: PixivTag | undefined;
 }
 
 export interface Subreddit {
   name: string;
   info: SubredditInfo;
   pivixTags: PixivTag[];
+  primaryTag: PixivTag | undefined;
   defaults: SubredditDefaults;
   categories: string[];
+  currentPage: string;
   notes: string;
 }
 
@@ -61,24 +64,41 @@ export enum AuthStatus {
 }
 
 export interface PixivDetails {
-  imageLink?: string;
-  pixivLink?: string;
-  artist?: string;
-  artistID?: string;
-  artistLink?: string;
-  pixivID?: string;
-  description?: string;
-  title?: string;
+  imageLink: string;
+  smallImageLink: string;
+  pixivLink: string;
+  artist: string;
+  artistID: string;
+  artistLink: string;
+  pixivID: string;
+  description: string;
+  likeCount: number;
+  bookmarkCount: number;
+  title: string;
+  imageBlob?: string;
+  tags: string[];
 }
 
 export interface Post {
-  postDetails: PostTemplate[];
+  subreddit: Subreddit;
+  selectedImage: PixivDetails | undefined;
+  flair: SubredditFlair | null;
+  isNSFW: boolean;
+  usesDefaultComment: boolean;
+  suggestedImages: PixivDetails[];
+  slice: number;
+  comment: string;
+  title: string;
+}
+
+export interface ClassicPost {
+  postDetails: ClassicPostTemplate[];
   comment: string;
   imageLink: string;
   dateTimeMS: number;
 }
 
-export interface PostTemplate {
+export interface ClassicPostTemplate {
   subreddit: Subreddit;
   flair: SubredditFlair | null;
   tags: Tags[];
@@ -105,7 +125,10 @@ export interface SubmitRequest {
   url: string;
   nsfw: boolean;
   sendreplies: boolean;
+  submit_type: string;
   flair_id?: string;
+  api_type: string;
+  validate_on_submit: boolean;
   kind: "link" | "self" | "image" | "video" | "videogif";
 }
 
@@ -125,3 +148,6 @@ export interface CommentRequest {
   text: string;
   thing_id: string;
 }
+
+export type SuggestedImages = { suggestedImages: PixivDetails[] };
+export type SuggestedImagesReq = { pixivTag: PixivTag, page: string, slice: number, count: number; token: string };

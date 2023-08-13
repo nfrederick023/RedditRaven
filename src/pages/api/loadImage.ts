@@ -15,11 +15,6 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     return;
   }
 
-  if (!link.includes("https://i.pximg.net/img-original/img/")) {
-    res.status(400).json({ message: "Link format is incorrect." });
-    return;
-  }
-
   const agent = new https.Agent({
     rejectUnauthorized: false,
   });

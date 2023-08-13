@@ -1,33 +1,21 @@
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker, LocalizationProvider, MobileTimePicker } from "@mui/x-date-pickers";
-import { FileUpload } from "@client/components/common/shared/file-upload";
-import { PixivDetails, Post, PostTemplate, Subreddit, Tags } from "@client/utils/types";
-import Gradient from "@client/components/common/shared/gradient";
-import NoSSR from "@mpth/react-no-ssr";
-import React, { FC, useEffect, useState } from "react";
+import {
+  BluJayTheme,
+  PixivDetails,
+  PixivTag,
+  Post,
+  Subreddit,
+  SuggestedImages,
+  SuggestedImagesReq,
+  Tags,
+} from "@client/utils/types";
+import React, { FC, useEffect, useRef, useState } from "react";
 import Select from "@client/components/common/shared/select";
 import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
-import TextArea from "@client/components/common/shared/text-area";
 import TextField from "@client/components/common/shared/text-field";
-import dayjs, { Dayjs } from "dayjs";
 import styled from "styled-components";
-
-const SearchHeaderWrapper = styled.div`
-  margin: 10px 0px 5px 0px;
-`;
 
 const DashboardContent = styled.div`
   text-align: left;
-`;
-
-const Divider = styled.div`
-  margin-top: 5px;
-`;
-
-const SearchResult = styled.div`
-  display: flex;
-  align-items: center;
-  padding-bottom: 5px;
 `;
 
 const Button = styled.div`
@@ -66,61 +54,70 @@ const Icon = styled.div`
   }
 `;
 
-const CommentWrapper = styled.div`
-  width: 100%;
-  height: 5em;
-  margin-top: 5px;
-`;
-
-const FlexWrapper = styled.div`
+const ImagePreviewWrapper = styled.div`
   display: flex;
+  margin-bottom: 15px;
+  justify-content: center;
 `;
 
 const DetailsWrapper = styled.div`
-  margin: 5px 0px 10px 0px;
   display: flex;
-  white-space: pre;
   > div {
     margin-right: 5px;
+    align-self: center;
+    display: flex;
+    white-space: pre;
   }
 `;
 
-const DetailsOptions = styled.div`
-  width: 13%;
-  align-items: center;
-  display: flex;
-  overflow: hidden;
-
-  div {
-    margin-right: 5px;
-  }
+const DetailsWrapperBottom = styled(DetailsWrapper)`
+  margin-bottom: 15px;
 `;
 
-const DetailsSubreddit = styled.div`
-  width: 15%;
-  align-items: center;
-  display: flex;
-  overflow: hidden;
-
-  div {
-    margin-right: 5px;
-  }
-`;
-
-const DetailsFlair = styled.div`
-  width: 20%;
-  align-self: center;
-  display: flex;
+const DetailsTitle = styled.div`
+  width: 40%;
   > div {
     width: 100%;
   }
 `;
 
-const DetailsTags = styled.div`
+const DetailsFlair = styled.div`
+  width: 20%;
+  > div {
+    width: 100%;
+  }
+`;
+
+const DetailsCrosspost = styled.div`
+  width: 34%;
+  > div {
+    width: 100%;
+  }
+`;
+
+const DetailsR18 = styled.div`
+  width: 3%;
+  > div {
+    width: 100%;
+  }
+`;
+
+const DetailsComment = styled.div`
+  width: 3%;
+`;
+
+const DetailsSubreddit = styled.div`
   width: 25%;
-  align-self: center;
-  display: flex;
-  white-space: pre;
+  overflow: hidden;
+`;
+
+const DetailsPixivTag = styled.div`
+  width: 25%;
+  overflow: hidden;
+`;
+
+const DetailsLink = styled.div`
+  width: 50%;
   > div {
     width: 100%;
   }
@@ -130,39 +127,9 @@ const ButtonBase = styled.div`
   margin: 8px 5px 0px 0px;
 `;
 
-const ApplyAllButton = styled(ButtonBase)`
-  width: 20%;
-`;
-
 const CreditButtons = styled(ButtonBase)``;
 
-const ClearButton = styled(ButtonBase)`
-  margin-left: auto;
-  margin-right: 0px;
-  width: 15%;
-`;
-
-const InputFields = styled.div`
-  margin: 8px 5px 0px 0px;
-  width: 80%;
-`;
-
-const InputFieldMax = styled.div`
-  margin: 8px 5px 0px 0px;
-  width: 100%;
-`;
-
-const DetailsTitle = styled.div`
-  width: 30%;
-`;
-
 const GreyText = styled.div`
-  color: ${(p): string => p.theme.textContrast};
-`;
-
-const NoSubreddits = styled.div`
-  margin-top: 5px;
-  margin-bottom: 5px;
   color: ${(p): string => p.theme.textContrast};
 `;
 
@@ -171,129 +138,44 @@ const NoSearchResults = styled.div`
   color: ${(p): string => p.theme.textContrast};
 `;
 
-const DateTimeWrapper = styled.div`
-  > div {
-    width: 25%;
-    margin: 8px 5px 0px 0px;
-  }
-
-  div {
-    max-height: 30px;
-    height: 30px;
-    transition: all 0.1s ease-in;
-
-    &:hover {
-      fieldset {
-        border-color: ${(p): string => p.theme.text}!important;
-      }
-    }
-  }
-  input {
-    max-height: 30px;
-    padding: 0px 5px;
-    color: ${(p): string => p.theme.textContrast};
-    transition: all 0.1s ease-in;
-
-    &:hover {
-      color: ${(p): string => p.theme.text};
-    }
-  }
-
-  button {
-    color: ${(p): string => p.theme.textContrast} !important;
-    transition: all 0.1s ease-in;
-
-    &:hover {
-      color: ${(p): string => p.theme.text};
-    }
-
-    svg {
-      width: 0.9em;
-      height: 0.9em;
-    }
-  }
-
-  fieldset {
-    border-color: ${(p): string => p.theme.textContrast}!important;
-  }
-`;
-
-const ImageOptionsWrapper = styled.div`
-  width: 45%;
-`;
-
-const VerticleDivider = styled.div`
-  border-left: 1px solid ${(p): string => p.theme.text};
-  width: 1px;
-  margin-left: auto;
-  margin-right: auto;
-`;
-
-const FileUploadWrapper = styled.div`
-  border: 1px solid ${(p): string => p.theme.textContrast};
-  border-radius: 5px;
-  margin: 5px;
-  height: 72px;
-
-  &:hover {
-    border-color: ${(p): string => p.theme.text};
-  }
-`;
-
-const ImageDetails = styled.div`
-  width: 65%;
-  padding: 15px;
-  margin-top: 10px;
-
-  div {
-    padding-top: 15px;
-    white-space: pre;
-  }
-`;
-
-const ImagePreviewWrapper = styled.div`
-  margin-top: 10px;
-  height: 40vh;
-  width: 35%;
-  border: 1px solid ${(p): string => p.theme.textContrast};
-  border-radius: 15px;
-`;
-
 const ImagePreview = styled.img`
   object-fit: cover;
-  width: 100%;
-  height: 100%;
+  max-width: 24%;
   border-radius: 15px;
-`;
+  margin-right: 5px;
+  margin-left: 5px;
+  min-height: 450px;
+  max-height: 450px;
+  cursor: pointer;
 
+  ${(p: { theme: BluJayTheme; isSelected: boolean }): string =>
+    p.isSelected
+      ? `border: 2px ${p.theme.text} solid; box-shadow: 0 0 25px ${p.theme.text};`
+      : `border: 2px ${p.theme.background} solid; `};
+`;
+// ${(p: {isSelected: boolean}): string => }
 const Checkbox = styled.input`
-  margin-top: 17px;
   vertical-align: text-bottom;
   accent-color: ${(p): string => p.theme.highlightDark};
+  cursor: pointer;
 `;
 
 const CheckboxLabel = styled.label`
   user-select: none;
 `;
 
-const InputText = styled.div`
-  margin: 8px 5px 0px 0px;
+const CurentPageWrapper = styled(DetailsWrapper)`
+  margin-left: auto;
 `;
 
-const getSource = async (body: FormData): Promise<PixivDetails | undefined> => {
-  const response = await fetch("/api/sourceImage", {
+const getSuggestedImages = async (suggestedImagesReq: SuggestedImagesReq): Promise<SuggestedImages | undefined> => {
+  const response = await fetch("/api/suggestedImages", {
     method: "POST",
-    body,
+    body: JSON.stringify(suggestedImagesReq),
   });
-  if (response.ok) return (await response.json()) as PixivDetails;
-};
-
-const getLink = async (link: string): Promise<PixivDetails | undefined> => {
-  const response = await fetch("/api/sourceLink", {
-    method: "POST",
-    body: JSON.stringify({ link }),
-  });
-  if (response.ok) return (await response.json()) as PixivDetails;
+  if (response.ok) {
+    return (await response.json()) as SuggestedImages;
+  }
 };
 
 const getImage = async (link: string): Promise<Response> => {
@@ -304,10 +186,10 @@ const getImage = async (link: string): Promise<Response> => {
   return response;
 };
 
-const createRedditPost = async (post: Post): Promise<Response> => {
+const createRedditPost = async (posts: Post[]): Promise<Response> => {
   const response = await fetch("/api/createPost", {
     method: "POST",
-    body: JSON.stringify({ post }),
+    body: JSON.stringify({ posts }),
   });
   return response;
 };
@@ -320,49 +202,89 @@ interface IndexPageProps {
 
 const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
-  const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
-  const [globalTitle, setGlobalTitle] = useState("");
-  const [includeSource, setIncludeSoure] = useState(true);
-  const [postNow, setPostNow] = useState(true);
-  const [globalTags, setGlobalTags] = useState<Tags[]>([]);
-  const [comment, setComment] = useState("");
-  const [dateTime, setDateTime] = useState(dayjs(new Date()).add(30, "minutes"));
-  const [link, setLink] = useState("");
-  const [imgurl, setImageUrl] = useState("");
-  const [preview, setPreview] = useState(true);
-  const [pixivDetails, setPixivDetails] = useState<PixivDetails>();
-  const [clearOnPost, setClearOnPost] = useState(true);
-  const [tagPage, setTagPage] = useState("1");
-  const [displayPixivTags, setDisplayPixivTags] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [token, setToken] = useState("");
+  const isInitialMount = useRef(true);
 
-  const createPostTemplate = (subreddit: Subreddit): PostTemplate => {
-    return {
-      subreddit: subreddit,
-      title: subreddit.defaults.title,
-      flair: subreddit.defaults.flair,
-      tags: subreddit.defaults.tags,
+  const createPosts = async (): Promise<void> => {
+    const slice = 0;
+
+    const newPosts = await Promise.all(
+      paginatedResults.map(async (subreddit) => {
+        let suggestedImages: PixivDetails[] = [];
+
+        if (subreddit.defaults.pixivTag) {
+          suggestedImages = await retrieveSuggestedImages(subreddit.defaults.pixivTag, subreddit.currentPage, slice);
+        }
+
+        return {
+          subreddit: subreddit,
+          selectedImage: undefined,
+          flair: subreddit.defaults.flair,
+          isNSFW: false,
+          usesDefaultComment: true,
+          comment: "",
+          title: subreddit.defaults.title,
+          suggestedImages,
+          slice,
+        };
+      })
+    );
+    setPosts(newPosts);
+  };
+
+  const retrieveSuggestedImages = async (pixivTag: PixivTag, page: string, slice: number): Promise<PixivDetails[]> => {
+    const body: SuggestedImagesReq = {
+      pixivTag,
+      page,
+      slice,
+      token,
+      count: 5,
     };
+    const suggestedImages = (await getSuggestedImages(body))?.suggestedImages ?? [];
+
+    const promises = await Promise.all(
+      suggestedImages.map(async (image, i) => {
+        return { link: await loadPixivImage(image.smallImageLink), index: i };
+      })
+    );
+    promises.forEach((promise) => {
+      suggestedImages[promise.index].imageBlob = promise.link;
+    });
+
+    return suggestedImages;
   };
 
-  const handleAddSubreddit = (subreddit: Subreddit) => (): void => {
-    setPostTemplates([...postTemplates, createPostTemplate(subreddit)]);
+  const getNewSlice = async (postToUpdate: Post, slice: number): Promise<void> => {
+    if (postToUpdate.subreddit.defaults.pixivTag) {
+      setPosts(
+        posts.map((post) => {
+          if (post.subreddit.name === postToUpdate.subreddit.name) {
+            post.slice = slice;
+          }
+          return post;
+        })
+      );
+    }
   };
 
-  const handleAddAll = (): void => {
-    const newPosts: PostTemplate[] = [];
-    paginatedResults.forEach((subreddit) => newPosts.push(createPostTemplate(subreddit)));
-    setPostTemplates([...postTemplates, ...newPosts]);
+  const increaseSlice = (post: Post) => (): void => {
+    if (post.slice + 1 * 3 <= 60) getNewSlice(post, post.slice + 1);
   };
 
-  const handleRemoveAll = () => (): void => {
-    setPostTemplates([]);
+  const decreaseSlice = (post: Post) => (): void => {
+    if (post.slice - 1 >= 0) getNewSlice(post, post.slice - 1);
+  };
+
+  const handlePixivTokenChange = (token: string): void => {
+    setToken(token);
   };
 
   const handleFlairChange = (subreddit: Subreddit) => {
     return (flairName: string): void => {
       const flair = subreddit.info.flairs.find((flair) => flair.name === flairName);
-      setPostTemplates(
-        postTemplates.map((post) => {
+      setPosts(
+        posts.map((post) => {
           if (post.subreddit === subreddit) post.flair = flair ? flair : null;
           return post;
         })
@@ -372,9 +294,44 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handleTitleChange = (subreddit: Subreddit) => {
     return (title: string): void => {
-      setPostTemplates(
-        postTemplates.map((post) => {
+      setPosts(
+        posts.map((post) => {
           if (post.subreddit === subreddit) post.title = title;
+          return post;
+        })
+      );
+    };
+  };
+
+  const handleNSFWChange = (subreddit: Subreddit) => (): void => {
+    setPosts(
+      posts.map((post) => {
+        if (post.subreddit === subreddit) post.isNSFW = !post.isNSFW;
+        return post;
+      })
+    );
+  };
+
+  const handleImageChange = (subreddit: Subreddit, image: PixivDetails) => (): void => {
+    const parsedArtistName = image.artist.split("@")[0];
+    const title = subreddit.defaults.title + " (by " + parsedArtistName + ")";
+    setPosts(
+      posts.map((post) => {
+        if (post.subreddit === subreddit) {
+          post.selectedImage = image;
+          post.title = title;
+        }
+        return post;
+      })
+    );
+  };
+
+  const handleLinkChange = (subreddit: Subreddit) => {
+    return async (newLink: string): Promise<void> => {
+      setPosts(
+        posts.map((post) => {
+          if (post.subreddit === subreddit)
+            post.selectedImage = post.suggestedImages.find((image) => image.imageLink === newLink);
           return post;
         })
       );
@@ -383,227 +340,273 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handleTagChange = (subreddit: Subreddit) => {
     return (tags: string[]): void => {
-      setPostTemplates(
-        postTemplates.map((post) => {
-          if (post.subreddit === subreddit) post.tags = tags as Tags[];
+      setPosts(
+        posts.map((post) => {
           return post;
         })
       );
     };
   };
 
-  const handleGlobalTitleChange = (title: string): void => {
-    setGlobalTitle(title);
+  const handlePageChange = (subreddit: Subreddit): ((newPage: string) => void) => {
+    const newPosts = [...posts];
+    const postIndex = newPosts.findIndex((post) => post.subreddit.name === subreddit.name);
+
+    return (newPage: string) => {
+      newPosts[postIndex] = { ...newPosts[postIndex], subreddit: { ...subreddit, currentPage: newPage } };
+      setPosts(newPosts);
+    };
   };
 
-  const handleGlobalTagsChange = (tags: string[]): void => {
-    setGlobalTags(tags as Tags[]);
+  const updatePage = (newValue: string, subreddit: Subreddit): void => {
+    const newPosts = [...posts];
+    const postIndex = newPosts.findIndex((post) => post.subreddit.name === subreddit.name);
+    newPosts[postIndex] = { ...newPosts[postIndex], subreddit: { ...subreddit, currentPage: newValue } };
+    setPosts(newPosts);
   };
 
-  const handleCommentChange = (comment: string): void => {
-    setComment(comment);
+  const minusPage = (post: Post) => (): void => {
+    const newPage = Number(post.subreddit.currentPage) - 1 + "";
+    goToPage(post, newPage)();
   };
 
-  const handleRemoveSubreddit = (subreddit: Subreddit) => (): void => {
-    setPostTemplates(postTemplates.filter((post) => post.subreddit !== subreddit));
+  const plusPage = (post: Post) => (): void => {
+    const newPage = Number(post.subreddit.currentPage) + 1 + "";
+    goToPage(post, newPage)();
   };
 
-  const handleDateTimeChange = (date: Dayjs | null): void => {
-    if (date) setDateTime(date);
-  };
+  const goToPage = (post: Post, page: string) => async (): Promise<void> => {
+    if (post.subreddit.defaults.pixivTag) {
+      const suggestedImages = await retrieveSuggestedImages(post.subreddit.defaults.pixivTag, page, post.slice);
 
-  const handleApplyAllTitle = (): void => {
-    setPostTemplates(
-      postTemplates.map((post) => {
-        post.title = post.title + globalTitle;
-        return post;
-      })
-    );
-  };
-
-  const handleApplyAllTags = (): void => {
-    const newPosts = postTemplates.map((post) => {
-      post.tags = globalTags;
-      return post;
-    });
-
-    setPostTemplates(newPosts);
-  };
-
-  const handleLinkChange = async (newLink: string): Promise<void> => {
-    setLink(newLink);
-
-    if (newLink.includes("https://www.pixiv.net/") && newLink.includes("/artworks/"))
-      if (newLink.includes("#")) {
-        if (newLink.split("#")[1]) setPixivDetails(await getLink(newLink));
-      } else {
-        setPixivDetails(await getLink(newLink));
-      }
-  };
-
-  const copyLink = (subredditName: string) => (): void => {
-    navigator.clipboard.writeText(`https://www.reddit.com/r/${subredditName}`);
-  };
-
-  const handleImageChange = async (file: File | undefined): Promise<void> => {
-    const body = new FormData();
-    if (file) {
-      body.append("file", file);
-      setPixivDetails(await getSource(body));
+      setPosts(
+        posts.map((_post) => {
+          if (_post.subreddit.name === post.subreddit.name) {
+            _post.suggestedImages = suggestedImages;
+            _post.subreddit = { ..._post.subreddit, currentPage: page };
+          }
+          return _post;
+        })
+      );
+      getNewSlice(post, 0);
     }
   };
 
-  const handlePreviewChange = (): void => {
-    setPreview(!preview);
-  };
-
-  const updatePixivDetails = async (): Promise<void> => {
-    if (pixivDetails?.imageLink) {
-      const image = await getImage(pixivDetails.imageLink);
-      setImageUrl(URL.createObjectURL(await image.blob()));
-    } else {
-      setImageUrl("");
-    }
-  };
-
-  const handleCreditArtist = (): void => {
-    setComment(comment + `\n\nArt by: ${pixivDetails?.artist}`);
-  };
-
-  const handleCreditArtistInTitle = (): void => {
-    setGlobalTitle(globalTitle + ` (by ${pixivDetails?.artist})`);
-  };
-
-  const handleAddSource = (): void => {
-    const source = `[Source](${pixivDetails?.pixivLink})`;
-    if (!comment.includes(source)) setComment(comment + source);
-  };
-
-  const handleClearComment = (): void => {
-    setComment("");
-  };
-
-  const handleClearOnPostChange = (): void => {
-    setClearOnPost(!clearOnPost);
-  };
-
-  const handleIncludeSourceChange = (): void => {
-    setIncludeSoure(!includeSource);
-  };
-
-  const handlePostNowChange = (): void => {
-    setPostNow(!postNow);
+  const loadPixivImage = async (link: string): Promise<string> => {
+    const image = await getImage(link);
+    const blob = await image.blob();
+    return URL.createObjectURL(blob);
   };
 
   const viewNote = (subreddit: Subreddit) => (): void => {
     alert(subreddit.notes);
   };
 
-  const handleTagPageChange = (tagPage: string): void => {
-    if ((!isNaN(Number(tagPage)) && Number(tagPage) > 0) || tagPage === "") setTagPage(tagPage);
+  const handleTokenSubmit = (): void => {
+    setPosts([]);
+    setPaginatedResults([...paginatedResults]);
   };
 
-  const handleDisplayPixivTagsChange = (): void => {
-    setDisplayPixivTags(!displayPixivTags);
-  };
+  const createPost = async (): Promise<void> => {
+    const compiledPosts: Post[] = [];
+    posts.forEach((post) => {
+      if (post.selectedImage) {
+        if (post.usesDefaultComment) post.comment = `[Source](${post.selectedImage.pixivLink})`;
+        compiledPosts.push(post);
+      }
+    });
 
-  const createPost = (): void => {
+    if (!compiledPosts.length) {
+      alert("There are no posts with selected images.");
+      return;
+    }
+
     // check all required fields
-    for (const postTemplate of postTemplates) {
-      if (!postTemplate.title) {
-        alert(`Subreddit: ${postTemplate.subreddit.name} is missing a title!`);
+    for (const post of compiledPosts) {
+      if (!post.title) {
+        alert(`Subreddit: ${post.subreddit.name} is missing a title!`);
         return;
+      }
+
+      if (!post.flair && post.subreddit.info.flairs.length) {
+        const notAllFlairsSelectedConfirmation = !confirm(
+          "Not all flairs are selected. Are you sure you wish to continue?"
+        );
+        if (notAllFlairsSelectedConfirmation) return;
       }
     }
 
-    if (!postTemplates.length) {
-      alert("You must select at least one subreddit!");
-      return;
-    }
+    const res = await createRedditPost(compiledPosts);
 
-    if (!pixivDetails || !pixivDetails.imageLink) {
-      alert("You must provide an image before making a post!");
-      return;
-    }
-
-    if (dateTime.toDate().getTime() < Date.now() && !postNow) {
-      alert("The time selected is in the past. Please select a different time!");
-      return;
-    }
-
-    const isAllFlairsSelected = !!postTemplates.find(
-      (postTemplate) => !postTemplate.flair && postTemplate.subreddit.info.flairs.length
-    );
-
-    if (isAllFlairsSelected) {
-      const notAllFlairsSelectedConfirmation = !confirm(
-        "Not all flairs are selected. Are you sure you wish to continue?"
-      );
-      if (notAllFlairsSelectedConfirmation) return;
-    }
-
-    const _comment = includeSource ? comment + `[Source](${pixivDetails?.pixivLink})` : comment;
-
-    const post: Post = {
-      postDetails: postTemplates,
-      imageLink: pixivDetails.imageLink,
-      dateTimeMS: dateTime.toDate().getTime(),
-      comment: _comment,
-    };
-
-    createRedditPost(post);
-
-    if (clearOnPost) {
-      setPostTemplates([]);
-      setPixivDetails(undefined);
-      setPaginatedResults([]);
-      setGlobalTitle("");
-      setGlobalTags([]);
-      setComment("");
-      setLink("");
-      setImageUrl("");
+    if (res.ok) {
+      window.location.reload();
     }
   };
 
   useEffect(() => {
-    updatePixivDetails();
-  }, [pixivDetails]);
-
-  const paginationFilter = (result: Subreddit): boolean => {
-    return !postTemplates.find((post) => result === post.subreddit);
-  };
+    if (isInitialMount.current) isInitialMount.current = false;
+    else createPosts();
+  }, [paginatedResults]);
 
   return (
     <>
       <h1>POST</h1>
       <DashboardContent>
         <hr />
+        <DetailsWrapperBottom>
+          <TextField onChange={handlePixivTokenChange} value={token} placeholder="Pixiv Token" />
+          <Button onClick={handleTokenSubmit}>Submit</Button>
+        </DetailsWrapperBottom>
         <SubredditsSearch
           paginatedResults={paginatedResults}
           setPaginatedResults={setPaginatedResults}
-          numberOfSelected={postTemplates.length}
-          paginationFilter={paginationFilter}
           subreddits={subreddits}
           resultsPerPageOptions={resultsPerPageOptions}
           intialResultsPerPage={resultsPerPageOptions[1]}
           showAll
+          hideWithouCategory
         />
-        {paginatedResults.length ? (
+        {posts.length ? (
           <>
-            {paginatedResults.map((subreddit, i) => {
+            {posts.map((post, i) => {
               return (
                 <div key={i}>
-                  <hr />
-
-                  {subreddit.pivixTags.length ? (
+                  {post.subreddit.defaults.pixivTag ? (
                     <div>
-                      <div>subreddit name | primary tag | Page + ___ - O auto?</div>
-                      <div>image1 image2 image3</div>
-                      <div>title flair nsfw crosspost comment</div>
-                      <div>comment</div>
+                      <hr />
+                      <DetailsWrapper>
+                        <DetailsSubreddit>
+                          <h4>Subreddit</h4>
+                        </DetailsSubreddit>
+                        <DetailsPixivTag>
+                          <h4>Pixiv Tag</h4>
+                        </DetailsPixivTag>
+                        <DetailsLink>
+                          <h4>Link</h4>
+                        </DetailsLink>
+                      </DetailsWrapper>
+                      <DetailsWrapperBottom>
+                        <DetailsSubreddit>
+                          <a href={"https://www.reddit.com" + post.subreddit.info.url} target="_blank" rel="noreferrer">
+                            {post.subreddit.defaults.pixivTag.enName}
+                          </a>
+                        </DetailsSubreddit>
+                        <DetailsPixivTag>
+                          <a
+                            href={
+                              post.subreddit.defaults.pixivTag.link +
+                              "/artworks?mode=safe&p=" +
+                              Number(post.subreddit.currentPage)
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {post.subreddit.defaults.pixivTag.enName}
+                          </a>
+                        </DetailsPixivTag>
+                        <DetailsLink>
+                          <TextField
+                            onChange={handleLinkChange(post.subreddit)}
+                            value={post.selectedImage?.pixivLink ?? ""}
+                            placeholder="Link"
+                          />
+                        </DetailsLink>
+                      </DetailsWrapperBottom>
+                      <DetailsWrapperBottom>
+                        <Icon className="bx bx-chevron-left" onClick={decreaseSlice(post)} />
+                        <Icon className="bx bx-chevron-right" onClick={increaseSlice(post)} />
+
+                        <CurentPageWrapper>
+                          <Icon className="bx bx-minus" onClick={minusPage(post)} title={post.subreddit.notes} />
+                          <TextField
+                            onChange={handlePageChange(post.subreddit)}
+                            value={post.subreddit.currentPage.toString()}
+                            placeholder="Title"
+                          />
+                          <Icon className="bx bx-plus" onClick={plusPage(post)} />
+                          <Icon className="bx bx-send" onClick={goToPage(post, post.subreddit.currentPage)} />
+                        </CurentPageWrapper>
+                      </DetailsWrapperBottom>
+                      <ImagePreviewWrapper>
+                        {post.suggestedImages.slice(post.slice * 4, post.slice * 4 + 4).map((image, i) => {
+                          return (
+                            <ImagePreview
+                              key={i}
+                              src={image.imageBlob}
+                              onClick={handleImageChange(post.subreddit, image)}
+                              isSelected={post.selectedImage?.imageLink === image.imageLink}
+                            />
+                          );
+                        })}
+                      </ImagePreviewWrapper>
+                      <DetailsWrapper>
+                        <DetailsTitle>
+                          <h4>Title</h4>
+                        </DetailsTitle>
+                        <DetailsFlair>
+                          <h4>Flair</h4>
+                        </DetailsFlair>
+                        <DetailsCrosspost>
+                          <h4>Crosspost</h4>
+                        </DetailsCrosspost>
+                        <DetailsR18>
+                          <h4>R18</h4>
+                        </DetailsR18>
+                        <DetailsComment>
+                          <h4>CC</h4>
+                        </DetailsComment>
+                      </DetailsWrapper>
+                      <DetailsWrapperBottom>
+                        <DetailsTitle>
+                          <TextField
+                            onChange={handleTitleChange(post.subreddit)}
+                            value={post.title}
+                            placeholder="Title"
+                          />
+                        </DetailsTitle>
+                        <DetailsFlair>
+                          {post.subreddit.info.flairs.length ? (
+                            <Select
+                              options={post.subreddit.info.flairs.map((flair) => flair.name)}
+                              value={post.flair?.name || ""}
+                              onChange={handleFlairChange(post.subreddit)}
+                              isClearable
+                            />
+                          ) : (
+                            <GreyText>No Flair</GreyText>
+                          )}
+                        </DetailsFlair>
+                        <DetailsCrosspost>
+                          <Select
+                            options={tagOptions}
+                            onChange={handleTagChange(post.subreddit)}
+                            value={[]}
+                            isMulti
+                            isClearable
+                          />
+                        </DetailsCrosspost>
+                        <DetailsR18>
+                          <CheckboxLabel>
+                            <Checkbox
+                              type="checkbox"
+                              checked={post.isNSFW}
+                              onChange={handleNSFWChange(post.subreddit)}
+                            />
+                          </CheckboxLabel>
+                        </DetailsR18>
+                        <DetailsComment>
+                          <Icon
+                            className="bx bx-note"
+                            onClick={viewNote(post.subreddit)}
+                            title={post.subreddit.notes}
+                          />
+                        </DetailsComment>
+                      </DetailsWrapperBottom>
+
+                      {/* <div>comment</div> */}
                     </div>
                   ) : (
-                    <>No primary tag</>
+                    <></>
                   )}
                 </div>
               );
@@ -612,10 +615,21 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         ) : (
           <NoSearchResults>No Subreddits Found!</NoSearchResults>
         )}
+        <hr />
         <CreditButtons>
-          <Button onClick={createPost}>Create Post</Button>
+          <Button onClick={createPost}>Create Posts</Button>
         </CreditButtons>
       </DashboardContent>
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
     </>
   );
 };

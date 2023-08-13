@@ -51,8 +51,14 @@ export const getSubredditsList = async (): Promise<Subreddit[]> => {
       newSubreddit.defaults = {
         tags: [],
         flair: null,
-        title: ""
+        title: "",
+        pixivTag: undefined
       };
+      isModified = true;
+    }
+
+    if (typeof subreddit.currentPage === "undefined" || Number(subreddit.currentPage) === 0) {
+      newSubreddit.currentPage = "1";
       isModified = true;
     }
 

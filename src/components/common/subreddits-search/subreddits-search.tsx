@@ -57,6 +57,7 @@ interface SubredditSearchProps {
   resultsPerPageOptions: string[];
   intialResultsPerPage: string;
   showAll?: boolean;
+  hideWithouCategory?: boolean;
   setPaginatedResults: React.Dispatch<React.SetStateAction<Subreddit[]>>;
   paginationFilter?: (result: Subreddit) => boolean;
 }
@@ -70,6 +71,7 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
   setPaginatedResults,
   paginationFilter,
   showAll,
+  hideWithouCategory,
 }: SubredditSearchProps) => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<Subreddit[]>([]);
@@ -83,7 +85,7 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
 
       const categoryFilter = selectedCategories.length
         ? selectedCategories.some((selectedCategory) => subreddit.categories.includes(selectedCategory))
-        : true;
+        : !hideWithouCategory;
 
       return searchFilter && categoryFilter;
     });
@@ -135,8 +137,9 @@ const SubredditsSearch: FC<SubredditSearchProps> = ({
       return !paginatedResults.includes(result);
     });
 
-    if (updatePagination.length || searchResultsSlice.length !== paginatedResults.length)
+    if (updatePagination.length || searchResultsSlice.length !== paginatedResults.length) {
       setPaginatedResults(searchResultsSlice);
+    }
   };
 
   useEffect(() => {

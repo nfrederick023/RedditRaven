@@ -1,7 +1,7 @@
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { ClassicPost, ClassicPostTemplate, PixivDetails, Subreddit, Tags } from "@client/utils/types";
 import { DatePicker, LocalizationProvider, MobileTimePicker } from "@mui/x-date-pickers";
 import { FileUpload } from "@client/components/common/shared/file-upload";
-import { PixivDetails, Post, PostTemplate, Subreddit, Tags } from "@client/utils/types";
 import Gradient from "@client/components/common/shared/gradient";
 import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";
@@ -304,8 +304,8 @@ const getImage = async (link: string): Promise<Response> => {
   return response;
 };
 
-const createRedditPost = async (post: Post): Promise<Response> => {
-  const response = await fetch("/api/createPost", {
+const createRedditPost = async (post: ClassicPost): Promise<Response> => {
+  const response = await fetch("/api/createPostClassic", {
     method: "POST",
     body: JSON.stringify({ post }),
   });
@@ -320,7 +320,7 @@ interface ClassicPageProps {
 
 const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
-  const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
+  const [postTemplates, setPostTemplates] = useState<ClassicPostTemplate[]>([]);
   const [globalTitle, setGlobalTitle] = useState("");
   const [includeSource, setIncludeSoure] = useState(true);
   const [postNow, setPostNow] = useState(true);
@@ -335,7 +335,7 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
   const [tagPage, setTagPage] = useState("1");
   const [displayPixivTags, setDisplayPixivTags] = useState(false);
 
-  const createPostTemplate = (subreddit: Subreddit): PostTemplate => {
+  const createPostTemplate = (subreddit: Subreddit): ClassicPostTemplate => {
     return {
       subreddit: subreddit,
       title: subreddit.defaults.title,
@@ -349,7 +349,7 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
   };
 
   const handleAddAll = (): void => {
-    const newPosts: PostTemplate[] = [];
+    const newPosts: ClassicPostTemplate[] = [];
     paginatedResults.forEach((subreddit) => newPosts.push(createPostTemplate(subreddit)));
     setPostTemplates([...postTemplates, ...newPosts]);
   };
@@ -544,7 +544,7 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
 
     const _comment = includeSource ? comment + `[Source](${pixivDetails?.pixivLink})` : comment;
 
-    const post: Post = {
+    const post: ClassicPost = {
       postDetails: postTemplates,
       imageLink: pixivDetails.imageLink,
       dateTimeMS: dateTime.toDate().getTime(),
@@ -666,7 +666,6 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
             <DetailsFlair>
               <h4>Subreddit</h4>
             </DetailsFlair>
-
             <DetailsTags>
               <h4>Pixiv Tags</h4>
             </DetailsTags>

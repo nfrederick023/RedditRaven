@@ -119,7 +119,6 @@ export const submitPost = async (postRequest: SubmitRequest): Promise<string> =>
 
   const mimetype = imageResponse.headers.get("content-type") ?? "";
   const buffer = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
-
   const filepath = postRequest.url.split("/").pop() || "";
 
   // get the upload credentials for reddit

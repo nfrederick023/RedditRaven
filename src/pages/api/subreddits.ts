@@ -33,9 +33,12 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
       defaults: {
         title: "",
         tags: [],
-        flair: null
+        flair: null,
+        pixivTag: undefined
       },
       pivixTags: [],
+      primaryTag: undefined,
+      currentPage: "1",
       info: { flairs, ...about },
     };
 

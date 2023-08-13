@@ -163,7 +163,7 @@ const ContentWrapper = styled.div`
   width: inherit;
   margin: 20px;
   overflow: hidden;
-  max-width: 1200px;
+  max-width: 1600px;
 `;
 
 type NextAppComponentType = typeof App;
@@ -181,8 +181,7 @@ const MyApp: Omit<NextAppComponentType, "origGetInitialProps"> = ({
   // assign default values to cookies if not set
   const cookies = new Cookies(appCookies);
   for (const [cookie, value] of Object.entries(appCookies))
-    if (value === "")
-      cookies.set(cookie, getCookieDefault(cookie), getCookieSetOptions());
+    if (value === "") cookies.set(cookie, getCookieDefault(cookie), getCookieSetOptions());
 
   return (
     <>

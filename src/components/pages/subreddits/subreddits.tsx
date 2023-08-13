@@ -161,9 +161,7 @@ interface SubredditsPageProps {
   readonly subreddits: Subreddit[];
 }
 
-const SubredditsPage: FC<SubredditsPageProps> = ({
-  subreddits,
-}: SubredditsPageProps) => {
+const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
   const [newSubreddit, setNewSubreddit] = useState<string>("");
   const [subredditList, setSubredditList] = useState(subreddits);
@@ -178,9 +176,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
     setCreatePixivTag("");
     setRemoveCategory("");
     setCategoryField("");
-    setSelectedIndex(
-      subredditList.findIndex((_subreddit) => _subreddit === subreddit)
-    );
+    setSelectedIndex(subredditList.findIndex((_subreddit) => _subreddit === subreddit));
   };
 
   const copyLink = (subredditName: string) => (): void => {
@@ -222,9 +218,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
 
   const handleDefaultFlairChange = (flairName: string): void => {
     if (typeof selectedIndex !== "undefined") {
-      const flair = subredditList[selectedIndex]?.info.flairs.find(
-        (flair) => flair.name === flairName
-      );
+      const flair = subredditList[selectedIndex]?.info.flairs.find((flair) => flair.name === flairName);
       if (flair) {
         const newSubredditList = [...subredditList];
         newSubredditList[selectedIndex].defaults.flair = flair;
@@ -245,6 +239,25 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
     if (typeof selectedIndex !== "undefined") {
       const newSubredditList = [...subredditList];
       newSubredditList[selectedIndex].defaults.tags = tags as Tags[];
+      setSubredditList(newSubredditList);
+    }
+  };
+
+  const handleDefaultPixivChange = (tagName: string): void => {
+    if (typeof selectedIndex !== "undefined") {
+      const newSubredditList = [...subredditList];
+      const selectedPixivTag = newSubredditList[selectedIndex].pivixTags.find(
+        (pixivTag) => pixivTag.enName === tagName
+      );
+      newSubredditList[selectedIndex].defaults.pixivTag = selectedPixivTag;
+      setSubredditList(newSubredditList);
+    }
+  };
+
+  const handlePageChange = (page: string): void => {
+    if (typeof selectedIndex !== "undefined") {
+      const newSubredditList = [...subredditList];
+      newSubredditList[selectedIndex].currentPage = page;
       setSubredditList(newSubredditList);
     }
   };
@@ -285,9 +298,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
   const handleDeleteCategory = (): void => {
     setRemoveCategory("");
     const newSubredditList = subredditList.map((subreddit) => {
-      subreddit.categories = subreddit.categories.filter(
-        (category) => category !== removeCategory
-      );
+      subreddit.categories = subreddit.categories.filter((category) => category !== removeCategory);
       return subreddit;
     });
     setSubredditList(newSubredditList);
@@ -302,9 +313,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
     if (
       pixivTag &&
       typeof selectedIndex !== "undefined" &&
-      !subredditList[selectedIndex].pivixTags.find(
-        (tag) => tag.jpName === pixivTag.jpName
-      )
+      !subredditList[selectedIndex].pivixTags.find((tag) => tag.jpName === pixivTag.jpName)
     ) {
       const newSubredditList = [...subredditList];
       newSubredditList[selectedIndex].pivixTags.push(pixivTag);
@@ -315,9 +324,9 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
   const handleDeletePixivTag = (): void => {
     if (typeof selectedIndex !== "undefined") {
       const newSubredditList = [...subredditList];
-      newSubredditList[selectedIndex].pivixTags = newSubredditList[
-        selectedIndex
-      ].pivixTags.filter((pixivTag) => pixivTag.enName !== deletePixivTag);
+      newSubredditList[selectedIndex].pivixTags = newSubredditList[selectedIndex].pivixTags.filter(
+        (pixivTag) => pixivTag.enName !== deletePixivTag
+      );
       setSubredditList(newSubredditList);
       setDeletePixivTag("");
     }
@@ -332,9 +341,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
   };
 
   const handleSaveChanges = async (): Promise<void> => {
-    const saveAllConfirmantion = confirm(
-      "Are you sure you'd like to your save changes?"
-    );
+    const saveAllConfirmantion = confirm("Are you sure you'd like to your save changes?");
 
     if (!saveAllConfirmantion) return;
 
@@ -357,15 +364,14 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
         title: "",
         tags: [],
         flair: null,
+        pixivTag: undefined,
       };
       setSubredditList(newSubredditList);
     }
   };
 
   const handleResetAll = (): void => {
-    const resetAllConfirmantion = confirm(
-      "Are you sure you want to delete all?"
-    );
+    const resetAllConfirmantion = confirm("Are you sure you want to delete all?");
     if (!resetAllConfirmantion) return;
     if (typeof selectedIndex !== "undefined") {
       const newSubredditList = [...subredditList];
@@ -377,6 +383,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
           title: "",
           tags: [],
           flair: null,
+          pixivTag: undefined,
         };
       }
       setSubredditList(newSubredditList);
@@ -384,16 +391,12 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
   };
 
   const handleDeleteAll = (): void => {
-    const deleteAllConfirmation = confirm(
-      "Are you sure you want to delete all?"
-    );
+    const deleteAllConfirmation = confirm("Are you sure you want to delete all?");
     if (deleteAllConfirmation) setSubredditList([]);
   };
 
   const handleDeleteAllCategories = (): void => {
-    const deleteAllCategoriesConfirmation = confirm(
-      "Are you sure you want to delete all categories?"
-    );
+    const deleteAllCategoriesConfirmation = confirm("Are you sure you want to delete all categories?");
     if (deleteAllCategoriesConfirmation) {
       const newSubredditList = subredditList.map((subreddit) => {
         subreddit.categories = [];
@@ -404,10 +407,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
   };
 
   let categoryList: string[] = [];
-  subredditList.forEach(
-    (subreddit) =>
-      (categoryList = [...new Set([...categoryList, ...subreddit.categories])])
-  );
+  subredditList.forEach((subreddit) => (categoryList = [...new Set([...categoryList, ...subreddit.categories])]));
 
   const selectedSubreddit = subredditList[selectedIndex || 0];
 
@@ -442,31 +442,12 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
             return (
               <SearchResult key={i}>
                 <ListOptions>
-                  <Icon
-                    className="bx bxs-edit-alt"
-                    onClick={editSubreddit(subreddit)}
-                    title="Edit Subreddit"
-                  />
-                  <Icon
-                    className="bx bx-link"
-                    onClick={copyLink(subreddit.name)}
-                    title="Copy Link"
-                  />
-                  <a
-                    href={"https://www.reddit.com" + subreddit.info.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Icon
-                      title="Open in New Tab"
-                      className="bx bx-link-external"
-                    />
+                  <Icon className="bx bxs-edit-alt" onClick={editSubreddit(subreddit)} title="Edit Subreddit" />
+                  <Icon className="bx bx-link" onClick={copyLink(subreddit.name)} title="Copy Link" />
+                  <a href={"https://www.reddit.com" + subreddit.info.url} target="_blank" rel="noreferrer">
+                    <Icon title="Open in New Tab" className="bx bx-link-external" />
                   </a>
-                  <Icon
-                    className="bx bx-x"
-                    title="Delete Subreddit"
-                    onClick={handleRemoveSubreddit(subreddit.name)}
-                  />
+                  <Icon className="bx bx-x" title="Delete Subreddit" onClick={handleRemoveSubreddit(subreddit.name)} />
                 </ListOptions>
                 <ListName>{subreddit.name}</ListName>
               </SearchResult>
@@ -485,11 +466,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
           <EditHeader>DETAILS</EditHeader>
           <FlexWrapper>
             <h4>Name: </h4>
-            <a
-              href={"https://www.reddit.com" + selectedSubreddit.info.url}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={"https://www.reddit.com" + selectedSubreddit.info.url} target="_blank" rel="noreferrer">
               {"r/" + selectedSubreddit.name}
             </a>
           </FlexWrapper>
@@ -513,9 +490,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
             </InputText>
             <InputFields>
               <Select
-                options={selectedSubreddit.info.flairs.map(
-                  (flair) => flair.name
-                )}
+                options={selectedSubreddit.info.flairs.map((flair) => flair.name)}
                 onChange={handleDefaultFlairChange}
                 value={selectedSubreddit.defaults.flair?.name || ""}
                 isClearable
@@ -548,6 +523,19 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
               />
             </InputFields>
           </FlexWrapper>
+          <FlexWrapper>
+            <InputText>
+              <ButtonBase>Pixiv:</ButtonBase>
+            </InputText>
+            <InputFields>
+              <Select
+                options={selectedSubreddit.pivixTags.map((pixivTag) => pixivTag.enName)}
+                onChange={handleDefaultPixivChange}
+                value={selectedSubreddit.defaults.pixivTag?.enName ?? ""}
+                isClearable
+              />
+            </InputFields>
+          </FlexWrapper>
           <EditHeader>CATEGORIES</EditHeader>
           <InputFields>
             <Select
@@ -563,11 +551,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
               <Button onClick={handleCreateCategory}>Create Category</Button>
             </ButtonBase>
             <InputFields>
-              <TextField
-                onChange={handleCreateCategoryChange}
-                value={categoryField}
-                placeholder="Category Name"
-              />
+              <TextField onChange={handleCreateCategoryChange} value={categoryField} placeholder="Category Name" />
             </InputFields>
           </FlexWrapper>
           <EditHeader>PIXIV TAGS</EditHeader>
@@ -575,11 +559,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
           {selectedSubreddit.pivixTags.map((tag, i) => {
             return (
               <span key={i}>
-                <a
-                  href={tag.link + "/artworks"}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a href={tag.link + "/artworks"} target="_blank" rel="noreferrer">
                   {tag.enName}{" "}
                 </a>
                 {i !== selectedSubreddit.pivixTags.length - 1 && " | "}
@@ -591,11 +571,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
               <Button onClick={handleCreatePixivTag}>Add Pixiv Tag</Button>
             </ButtonBase>
             <InputFields>
-              <TextField
-                onChange={handleCreatePixivTagChange}
-                value={createPixivTag}
-                placeholder="Tag Link"
-              />
+              <TextField onChange={handleCreatePixivTagChange} value={createPixivTag} placeholder="Tag Link" />
             </InputFields>
           </FlexWrapper>
           <FlexWrapper>
@@ -612,11 +588,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
           </FlexWrapper>
           <EditHeader>NOTES</EditHeader>
           <CommentWrapper>
-            <TextArea
-              onChange={handleNoteChange}
-              value={selectedSubreddit.notes}
-              placeholder={"Notes..."}
-            />
+            <TextArea onChange={handleNoteChange} value={selectedSubreddit.notes} placeholder={"Notes..."} />
           </CommentWrapper>
           <InputFields>
             <Icon onClick={handleClearNotes}>Clear Notes</Icon>
@@ -628,6 +600,19 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
             <InputText>
               <Button onClick={handleResetSelected}>Reset To Default</Button>
             </InputText>
+          </FlexWrapper>
+          <EditHeader>PAGE</EditHeader>
+          <FlexWrapper>
+            <InputText>
+              <ButtonBase>Page:</ButtonBase>
+            </InputText>
+            <InputFields>
+              <TextField
+                onChange={handlePageChange}
+                value={selectedSubreddit.currentPage.toString()}
+                placeholder="Page..."
+              />
+            </InputFields>
           </FlexWrapper>
         </>
       ) : (
@@ -656,19 +641,12 @@ const SubredditsPage: FC<SubredditsPageProps> = ({
           <Button onClick={handleDeleteCategory}>Delete Category</Button>
         </ButtonBase>
         <InputFields>
-          <Select
-            options={categoryList}
-            onChange={handleDeleteCategoryChange}
-            value={removeCategory}
-          />
+          <Select options={categoryList} onChange={handleDeleteCategoryChange} value={removeCategory} />
         </InputFields>
       </FlexWrapper>
       <InputFields>
-        <Button onClick={handleDeleteAllCategories}>
-          Delete All Categories
-        </Button>
+        <Button onClick={handleDeleteAllCategories}>Delete All Categories</Button>
       </InputFields>
-
       <FlexWrapper>
         <InputText>
           <Button onClick={handleResetAll}>Reset All To Default</Button>
