@@ -59,7 +59,7 @@ const UnselectedOption = styled.div`
 `;
 
 const SelectedBox = styled.div`
-  width: 95%;
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
 `;
@@ -71,8 +71,7 @@ const SelectedOption = styled.div`
   padding: 0px 0px 1px 6px;
   font-size: 85%;
 
-  ${(props: { isMulti: boolean | undefined }): string =>
-    props.isMulti ? "" : "border: 0px; font-size: 1rem;"}
+  ${(props: { isMulti: boolean | undefined }): string => (props.isMulti ? "" : "border: 0px; font-size: 1rem;")}
 `;
 
 const SelectedIcon = styled.i`
@@ -118,14 +117,7 @@ interface SelectProps {
   onChange: (options: SelectOptions) => void;
 }
 
-const Select: FC<SelectProps> = ({
-  options,
-  isMulti,
-  isClearable,
-  defaultSelected,
-  value,
-  onChange,
-}: SelectProps) => {
+const Select: FC<SelectProps> = ({ options, isMulti, isClearable, defaultSelected, value, onChange }: SelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUnselectedFocus, setIsUnselectedFocus] = useState(false);
   const handleAddOption = (option: string) => (e: React.MouseEvent) => {
@@ -145,11 +137,7 @@ const Select: FC<SelectProps> = ({
     e.stopPropagation();
 
     if (isMulti) {
-      const newOptions = [
-        ...(value as string[]).filter(
-          (selectedOption) => selectedOption !== option
-        ),
-      ];
+      const newOptions = [...(value as string[]).filter((selectedOption) => selectedOption !== option)];
       onChange(newOptions as SelectOptions);
     } else {
       onChange("" as SelectOptions);
@@ -161,11 +149,7 @@ const Select: FC<SelectProps> = ({
     if (isMulti) {
       onChange([] as string[] as SelectOptions);
     } else {
-      onChange(
-        defaultSelected
-          ? (defaultSelected as SelectOptions)
-          : ("Select..." as SelectOptions)
-      );
+      onChange(defaultSelected ? (defaultSelected as SelectOptions) : ("Select..." as SelectOptions));
     }
   };
 
@@ -210,10 +194,7 @@ const Select: FC<SelectProps> = ({
                       <SelectedOption key={i} isMulti={isMulti}>
                         {selectedOption}
                         {isMulti && (
-                          <SelectedIcon
-                            className="bx bx-x"
-                            onClick={handleRemoveOption(selectedOption)}
-                          ></SelectedIcon>
+                          <SelectedIcon className="bx bx-x" onClick={handleRemoveOption(selectedOption)}></SelectedIcon>
                         )}
                       </SelectedOption>
                     );
@@ -240,12 +221,7 @@ const Select: FC<SelectProps> = ({
       </SelectBox>
 
       {isOpen && (
-        <UnselectedBox
-          tabIndex={0}
-          onMouseDown={mouseDown}
-          onMouseUp={mouseUp}
-          onBlur={onBlur}
-        >
+        <UnselectedBox tabIndex={0} onMouseDown={mouseDown} onMouseUp={mouseUp} onBlur={onBlur}>
           {unselectedOptions.length ? (
             <>
               {unselectedOptions.map((option, i) => {

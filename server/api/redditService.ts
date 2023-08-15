@@ -1,11 +1,11 @@
 
 import { CommentRequest, SubmitRequest, SubmitResponse, SubredditAbout, SubredditFlair } from "@client/utils/types";
 import { creds } from "@server/credentials/creds";
-import { default as nodeFetch } from "node-fetch";
+import { loadImage } from "./getPixivDetails";
 import FormData from "form-data";
 import Reddit from "reddit";
 import WebSocket from "websocket";
-import https from "https";
+
 interface SubredditAboutRaw {
   readonly data: {
     readonly display_name: string;
@@ -65,7 +65,8 @@ const reddit: Reddit = new Reddit({
   username: creds.REDDIT_USERNAME,
   password: creds.PASSWORD,
   appId: creds.APP_ID,
-  appSecret: creds.APP_SECRET
+  appSecret: creds.APP_SECRET,
+  userAgent: "nodejs:LankySeatDev:v0.1.5 (by u/LankySeat)"
 });
 
 /**
@@ -102,79 +103,76 @@ export const getFlairsBySubbreddit = async (subredditName: string): Promise<Subr
     return [];
   }
 };
-export const submitPost = async (postRequest: SubmitRequest): Promise<string> => {
-  const agent = new https.Agent({
-    rejectUnauthorized: false,
-  });
+export const submitImagePost = async (postRequest: SubmitRequest): Promise<string> => {
 
-  // get the image data from pixiv
-  const imageResponse = await nodeFetch(
-    postRequest.url,
-    {
-      method: "GET",
-      agent,
-      referrer: "https://www.pixiv.net/",
-    }
-  );
+  if (postRequest.url) {
+    const imageResponse = await loadImage(postRequest.url);
 
-  const mimetype = imageResponse.headers.get("content-type") ?? "";
-  const buffer = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
-  const filepath = postRequest.url.split("/").pop() || "";
+    const mimetype = imageResponse.headers.get("content-type") ?? "";
+    const buffer = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
+    const filepath = postRequest.url.split("/").pop() || "";
 
-  // get the upload credentials for reddit
-  const uploadImageRequest = {
-    filepath,
-    mimetype
-  };
-  const uploadResponse = await reddit.post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
-  const uploadURL = "https:" + uploadResponse.args.action;
-  const formdata = new FormData();
+    // get the upload credentials for reddit
+    const uploadImageRequest = {
+      filepath,
+      mimetype
+    };
+    const uploadResponse = await reddit.post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
+    const uploadURL = "https:" + uploadResponse.args.action;
+    const formdata = new FormData();
 
-  uploadResponse.args.fields.forEach(item => formdata.append(item.name, item.value));
-  formdata.append("file", buffer, filepath);
+    uploadResponse.args.fields.forEach(item => formdata.append(item.name, item.value));
+    formdata.append("file", buffer, filepath);
 
-  // upload the image
-  await fetch(uploadURL, {
-    method: "POST",
-    // ignore the error on thie line because it works and fetch is just being dumb asf
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
-    body: formdata,
-  });
+    // upload the image
+    await fetch(uploadURL, {
+      method: "POST",
+      // ignore the error on thie line because it works and fetch is just being dumb asf
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-ignore
+      body: formdata,
+    });
 
-  const WebSocketClient = new WebSocket.client;
-  const uploadedImageLink = uploadURL + "/" + uploadResponse.args.fields.find(item => item.name === "key")?.value;
-  const websocket_url = uploadResponse.asset.websocket_url;
-  // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
-  WebSocketClient.connect(websocket_url);
-  const getURL = (): Promise<string> => {
-    return new Promise(function (resolve, reject) {
-      WebSocketClient.on("connect", connection => {
-        connection.on("message", (message) => {
-          const msg = message as PostUploadedImageWSMessage;
-          const parsedUTF8Data = JSON.parse(msg.utf8Data) as ParsedUTF8Data;
-          connection.close();
-          resolve(parsedUTF8Data.payload.redirect);
-        });
-        connection.on("error", err => {
-          reject(err);
+    const WebSocketClient = new WebSocket.client;
+    const uploadedImageLink = uploadURL + "/" + uploadResponse.args.fields.find(item => item.name === "key")?.value;
+    const websocket_url = uploadResponse.asset.websocket_url;
+    // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
+    WebSocketClient.connect(websocket_url);
+    const getURL = (): Promise<string> => {
+      return new Promise(function (resolve, reject) {
+        WebSocketClient.on("connect", connection => {
+          connection.on("message", (message) => {
+            const msg = message as PostUploadedImageWSMessage;
+            const parsedUTF8Data = JSON.parse(msg.utf8Data) as ParsedUTF8Data;
+            connection.close();
+            resolve(parsedUTF8Data.payload.redirect);
+          });
+          connection.on("error", err => {
+            reject(err);
+          });
         });
       });
-    });
-  };
-  postRequest.url = uploadedImageLink;
+    };
+    postRequest.url = uploadedImageLink;
 
-  // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
-  reddit.post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
+    reddit.post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
 
-  // get the post link from the websocket
-  const postLink = await getURL();
+    // get the post link from the websocket
+    const postLink = await getURL();
 
-  // parse the thing_id out from the post link, and return the thing_id to be used for making comments 
-  const thing_id = "t3_" + postLink.split("comments/")[1].split("/")[0];
-  return thing_id;
+    // parse the thing_id out from the post link, and return the thing_id to be used for making comments 
+    const thing_id = "t3_" + postLink.split("comments/")[1].split("/")[0];
+    return thing_id;
+  }
+
+  return "";
 };
 
 export const submitComment = async (commentReqeust: CommentRequest): Promise<SubmitResponse> => {
   return await reddit.post<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
+};
+
+export const submitPost = async (submitRequest: SubmitRequest): Promise<SubmitResponse> => {
+  return await reddit.post<SubmitResponse, CrosspostRequest>("/api/submit", submitRequest);
 };

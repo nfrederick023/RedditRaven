@@ -67,6 +67,23 @@ export const getSubredditsList = async (): Promise<Subreddit[]> => {
       isModified = true;
     }
 
+    if (typeof subreddit.defaults.pixivTag?.title === "undefined" && newSubreddit.defaults.pixivTag) {
+      const originalTag = newSubreddit.pivixTags.find(tag => tag.enName === newSubreddit.defaults.pixivTag?.enName);
+      if (originalTag) {
+        newSubreddit.defaults.pixivTag.title = originalTag.title ?? originalTag.enName;
+      } else {
+        newSubreddit.defaults.pixivTag.title = newSubreddit.defaults.pixivTag.enName;
+      }
+      isModified = true;
+    }
+
+    for (const tag of subreddit.pivixTags) {
+      if (typeof tag.title === "undefined") {
+        tag.title = tag.enName;
+        isModified = true;
+      }
+    }
+
     // remove the subreddit if any of these are bad
     if (typeof subreddit.info.isCrosspostable === "undefined" || typeof subreddit.info.isNSFW === "undefined" || typeof subreddit.info.isNSFW === "undefined" || typeof subreddit.info.flairs === "undefined") {
       // if the name is defined, try to re-add the subreddit

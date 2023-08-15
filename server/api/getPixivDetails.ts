@@ -1,5 +1,6 @@
 import * as https from "https";
 import { PixivDetails, PixivTag, SuggestedImages } from "@client/utils/types";
+import { Response } from "node-fetch";
 import fetch from "node-fetch";
 
 interface PixivImageTags {
@@ -118,7 +119,23 @@ const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails 
   }
 };
 
-export const getImageURL = async (baseURL: string, pixivID: string, frame: string): Promise<string> => {
+export const loadImage = async (url: string): Promise<Response> => {
+  const agent = new https.Agent({
+    rejectUnauthorized: false,
+  });
+
+  // get the image data from pixiv
+  return await fetch(
+    url,
+    {
+      method: "GET",
+      agent,
+      referrer: "https://www.pixiv.net/",
+    }
+  );
+};
+
+export const getImageURL = async (baseURL: string, pixivID: string, frame: string): Promise<string | undefined> => {
   const ext = baseURL.split(".").pop();
 
   let imageLink = "";
@@ -131,20 +148,26 @@ export const getImageURL = async (baseURL: string, pixivID: string, frame: strin
     rejectUnauthorized: false,
   });
 
-  const checkJPG = await fetch(
-    imageLink,
-    {
-      method: "GET",
-      agent,
-      referrer: "https://www.pixiv.net/",
+  try {
+    const checkJPG = await fetch(
+      imageLink,
+      {
+        method: "GET",
+        signal: AbortSignal.timeout(120000),
+        agent,
+        referrer: "https://www.pixiv.net/",
+      }
+    );
+
+    if (!checkJPG.ok) {
+      imageLink = imageLink.split(".jpg")[0] + ".png";
     }
-  );
+    return imageLink;
+  } catch (e) {
 
-  if (!checkJPG.ok) {
-    imageLink = imageLink.split(".jpg")[0] + ".png";
+    // eslint-disable-next-line no-console
+    console.warn("Failed to get image URL!");
   }
-
-  return imageLink;
 };
 
 export const getImageLink = async (pixivID: string, frame: string): Promise<PixivDetails | undefined> => {
@@ -164,26 +187,29 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
     const likeCount = res.body.likeCount;
     const tags = res.body.tags.tags.map(tag => tag.tag);
 
-    return {
-      title,
-      artist,
-      artistID,
-      artistLink,
-      pixivID,
-      pixivLink,
-      imageLink,
-      description,
-      bookmarkCount,
-      likeCount,
-      smallImageLink,
-      tags
-    };
+    if (imageLink)
+      return {
+        title,
+        frame,
+        artist,
+        artistID,
+        artistLink,
+        pixivID,
+        pixivLink,
+        imageLink,
+        description,
+        bookmarkCount,
+        likeCount,
+        smallImageLink,
+        tags
+      };
   }
 };
 
 export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined> => {
   const response = await fetch("https://www.pixiv.net/ajax/search/tags/" + tagName, {
     method: "GET",
+    signal: AbortSignal.timeout(120000),
     headers: { "accept-language": "en-US" }
   });
 
@@ -191,10 +217,12 @@ export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined
     const res = await response.json() as PixivTagDetails;
     const translationEN = Object.values(res.body.tagTranslation)[0]?.en;
     const translationRomaji = Object.values(res.body.tagTranslation)[0]?.romaji;
+    const enName = translationEN ? translationEN : translationRomaji ? translationRomaji : res.body.tag;
     const pixivTag: PixivTag = {
       jpName: res.body.tag,
-      enName: translationEN ? translationEN : translationRomaji ? translationRomaji : res.body.tag,
-      link: "https://www.pixiv.net/tags/" + res.body.tag
+      enName: enName,
+      link: "https://www.pixiv.net/tags/" + res.body.tag,
+      title: enName
     };
 
     return pixivTag;
@@ -214,13 +242,14 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
 
   if (response.ok) {
     const res = await response.json() as PixivIllustSearch;
-    const illusts: PixivDetails[] = [];
+    const unfilteredIllustations = await Promise.all(res.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
+    const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
+    const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 60).map(async image => {
+      const res = await loadImage(image.smallImageLink);
+      image.imageBlob = Buffer.from(await res.arrayBuffer()).toString("base64");
+      return image;
+    }));
 
-    const promises = await Promise.all(res.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
-
-    promises.forEach(promise => { if (promise) illusts.push(promise); });
-
-    const suggestedImages = illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 12);
     return { suggestedImages };
   }
 };

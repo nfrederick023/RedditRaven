@@ -332,6 +332,23 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
     }
   };
 
+  const handleTagTitleChange = (newTagTitle: string): void => {
+    if (typeof selectedIndex !== "undefined") {
+      const newSubredditList = [...subredditList];
+      const selectedSubreddit = newSubredditList[selectedIndex];
+
+      if (selectedSubreddit.defaults.pixivTag?.enName === deletePixivTag)
+        selectedSubreddit.defaults.pixivTag = { ...selectedSubreddit.defaults.pixivTag, title: newTagTitle };
+      selectedSubreddit.pivixTags = selectedSubreddit.pivixTags.map((tag) => {
+        if (tag.enName === deletePixivTag) {
+          tag.title = newTagTitle;
+        }
+        return tag;
+      });
+      setSubredditList(newSubredditList);
+    }
+  };
+
   const handleDeletePixivTagChange = (pixivTag: string): void => {
     setDeletePixivTag(pixivTag);
   };
@@ -575,9 +592,6 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
             </InputFields>
           </FlexWrapper>
           <FlexWrapper>
-            <ButtonBase>
-              <Button onClick={handleDeletePixivTag}>Delete Category</Button>
-            </ButtonBase>
             <InputFields>
               <Select
                 options={selectedSubreddit.pivixTags.map((tag) => tag.enName)}
@@ -586,6 +600,22 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
               />
             </InputFields>
           </FlexWrapper>
+          <FlexWrapper>
+            <InputText>
+              <ButtonBase>Title:</ButtonBase>
+            </InputText>
+            <InputFields>
+              <TextField
+                onChange={handleTagTitleChange}
+                value={selectedSubreddit.pivixTags.find((tag) => tag.enName === deletePixivTag)?.title ?? ""}
+                placeholder="Tag Title"
+              />
+            </InputFields>
+            <ButtonBase>
+              <Button onClick={handleDeletePixivTag}>Delete Tag</Button>
+            </ButtonBase>
+          </FlexWrapper>
+
           <EditHeader>NOTES</EditHeader>
           <CommentWrapper>
             <TextArea onChange={handleNoteChange} value={selectedSubreddit.notes} placeholder={"Notes..."} />

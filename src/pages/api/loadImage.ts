@@ -1,6 +1,6 @@
-import * as https from "https";
 import { NextApiRequest, NextApiResponse } from "next";
-import fetch from "node-fetch";
+import { loadImage } from "@server/api/getPixivDetails";
+
 const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
   if (req.method !== "POST") {
@@ -15,26 +15,12 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     return;
   }
 
-  const agent = new https.Agent({
-    rejectUnauthorized: false,
-  });
-
-  const response = await fetch(
-    link,
-    {
-      method: "GET",
-      agent,
-      referrer: "https://www.pixiv.net/",
-    }
-  );
+  const response = await loadImage(link);
 
   if (response.ok) {
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
     res.send(Buffer.from(arrayBuffer));
-    // const contentType = response.headers.get("content-type") ?? "";
-    // res.setHeader("Content-Type", contentType);
-    // response.body?.pipe(res);
     return;
   }
 

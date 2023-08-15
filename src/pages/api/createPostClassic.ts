@@ -1,6 +1,6 @@
 import { ClassicPost, CommentRequest, SubmitRequest } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
-import { submitComment, submitPost } from "@server/api/redditService";
+import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
 
 const createPostClassic = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
@@ -29,10 +29,13 @@ const createPostClassic = async (req: NextApiRequest, res: NextApiResponse): Pro
       flair_id: postDetail.flair?.id,
       kind: "image",
       sendreplies: true,
-      validate_on_submit: true
+      validate_on_submit: true,
+      original_content: false,
+      post_to_twitter: false,
+      spoiler: false
     };
 
-    const postResponse = await submitPost(postRequest);
+    const postResponse = await submitImagePost(postRequest);
     if (post.comment) {
       const commentReqeust: CommentRequest = {
         text: post.comment,

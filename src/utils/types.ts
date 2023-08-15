@@ -38,6 +38,7 @@ export interface PixivTag {
   jpName: string;
   enName: string;
   link: string;
+  title: string;
 }
 
 export interface SubredditDefaults {
@@ -65,6 +66,7 @@ export enum AuthStatus {
 
 export interface PixivDetails {
   imageLink: string;
+  frame: string;
   smallImageLink: string;
   pixivLink: string;
   artist: string;
@@ -88,8 +90,12 @@ export interface Post {
   suggestedImages: PixivDetails[];
   slice: number;
   comment: string;
+  pixivTag: PixivTag | undefined;
   title: string;
   isLoading: boolean;
+  multipost: string[];
+  crossposts: string[];
+  customLink: string;
 }
 
 export interface ClassicPost {
@@ -123,14 +129,18 @@ export interface SubmitResponse {
 export interface SubmitRequest {
   title: string;
   sr: string;
-  url: string;
+  url?: string;
   nsfw: boolean;
   sendreplies: boolean;
   submit_type: string;
   flair_id?: string;
   api_type: string;
   validate_on_submit: boolean;
-  kind: "link" | "self" | "image" | "video" | "videogif";
+  crosspost_fullname?: string;
+  kind: "link" | "self" | "image" | "video" | "videogif" | "crosspost";
+  original_content: boolean;
+  post_to_twitter: boolean;
+  spoiler: boolean;
 }
 
 export interface CommentResponse {
@@ -151,4 +161,4 @@ export interface CommentRequest {
 }
 
 export type SuggestedImages = { suggestedImages: PixivDetails[] };
-export type SuggestedImagesReq = { pixivTag: PixivTag, page: string, slice: number, count: number; token: string };
+export type SuggestedImagesReq = { pixivTag: PixivTag | undefined, page: string, slice: number, count: number; token: string };
