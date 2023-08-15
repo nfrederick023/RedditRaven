@@ -229,7 +229,13 @@ const getLink = async (link: string): Promise<PixivDetails | undefined> => {
     method: "POST",
     body: JSON.stringify({ link }),
   });
-  if (response.ok) return (await response.json()) as PixivDetails;
+  if (response.ok) {
+    try {
+      return (await response.json()) as PixivDetails;
+    } catch (e) {
+      //
+    }
+  }
 };
 
 const createRedditPost = async (posts: Post[]): Promise<Response> => {
@@ -269,6 +275,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         multipost: [],
         pixivTag: subreddit.defaults.pixivTag,
         crossposts: [],
+        customLink: "",
       };
     });
 
@@ -382,6 +389,14 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const handleLinkChange = (postToUpdate: Post) => {
     return async (newLink: string): Promise<void> => {
       let pixivDetails: PixivDetails | undefined;
+      setPosts(
+        posts.map((post) => {
+          if (post.subreddit.name === postToUpdate.subreddit.name) {
+            post.customLink = newLink;
+          }
+          return post;
+        })
+      );
 
       if (newLink.includes("https://www.pixiv.net/") && newLink.includes("/artworks/")) {
         if (newLink.includes("#")) {
@@ -622,11 +637,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                       <Icon className="bx bx-chevron-left" onClick={decreaseSlice(post)} />
                       <Icon className="bx bx-chevron-right" onClick={increaseSlice(post)} />
                       <CurentPageWrapper>
-                        <TextField
-                          onChange={handleLinkChange(post)}
-                          value={post.selectedImage?.pixivLink ?? ""}
-                          placeholder="Link"
-                        />
+                        <TextField onChange={handleLinkChange(post)} value={post.customLink} placeholder="Link" />
                       </CurentPageWrapper>
                       <Icon className="bx bx-minus" onClick={minusPage(post)} title={post.subreddit.notes} />
                       <TextField
@@ -659,7 +670,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                                     </a>
                                     <Icon
                                       className="bx bx-link"
-                                      onClick={copyLink(image.pixivLink)}
+                                      onClick={copyLink("https://www.pixiv.net/en/artworks/" + image.pixivID)}
                                       title="Copy Link"
                                     />
                                   </ImageLinks>

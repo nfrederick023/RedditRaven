@@ -1,6 +1,6 @@
 import { CommentRequest, Post, SubmitRequest, Subreddit, SubredditFlair } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
-import { getImageLink, getImageURL } from "@server/api/getPixivDetails";
+import { getImageURL } from "@server/api/getPixivDetails";
 import { getSubredditsList, setSubredditsList } from "@server/utils/config";
 import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
 

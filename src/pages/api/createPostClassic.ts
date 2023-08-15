@@ -1,6 +1,6 @@
 import { ClassicPost, CommentRequest, SubmitRequest } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
-import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
+import { submitComment, submitImagePost } from "@server/api/redditService";
 
 const createPostClassic = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
