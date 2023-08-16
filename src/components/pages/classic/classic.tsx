@@ -1,15 +1,11 @@
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ClassicPost, ClassicPostTemplate, PixivDetails, Subreddit, Tags } from "@client/utils/types";
-import { DatePicker, LocalizationProvider, MobileTimePicker } from "@mui/x-date-pickers";
 import { FileUpload } from "@client/components/common/shared/file-upload";
 import Gradient from "@client/components/common/shared/gradient";
-import NoSSR from "@mpth/react-no-ssr";
 import React, { FC, useEffect, useState } from "react";
 import Select from "@client/components/common/shared/select";
 import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
 import TextArea from "@client/components/common/shared/text-area";
 import TextField from "@client/components/common/shared/text-field";
-import dayjs, { Dayjs } from "dayjs";
 import styled from "styled-components";
 
 const SearchHeaderWrapper = styled.div`
@@ -171,53 +167,6 @@ const NoSearchResults = styled.div`
   color: ${(p): string => p.theme.textContrast};
 `;
 
-const DateTimeWrapper = styled.div`
-  > div {
-    width: 25%;
-    margin: 8px 5px 0px 0px;
-  }
-
-  div {
-    max-height: 30px;
-    height: 30px;
-    transition: all 0.1s ease-in;
-
-    &:hover {
-      fieldset {
-        border-color: ${(p): string => p.theme.text}!important;
-      }
-    }
-  }
-  input {
-    max-height: 30px;
-    padding: 0px 5px;
-    color: ${(p): string => p.theme.textContrast};
-    transition: all 0.1s ease-in;
-
-    &:hover {
-      color: ${(p): string => p.theme.text};
-    }
-  }
-
-  button {
-    color: ${(p): string => p.theme.textContrast} !important;
-    transition: all 0.1s ease-in;
-
-    &:hover {
-      color: ${(p): string => p.theme.text};
-    }
-
-    svg {
-      width: 0.9em;
-      height: 0.9em;
-    }
-  }
-
-  fieldset {
-    border-color: ${(p): string => p.theme.textContrast}!important;
-  }
-`;
-
 const ImageOptionsWrapper = styled.div`
   width: 45%;
 `;
@@ -326,7 +275,6 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
   const [postNow, setPostNow] = useState(true);
   const [globalTags, setGlobalTags] = useState<Tags[]>([]);
   const [comment, setComment] = useState("");
-  const [dateTime, setDateTime] = useState(dayjs(new Date()).add(30, "minutes"));
   const [link, setLink] = useState("");
   const [imgurl, setImageUrl] = useState("");
   const [preview, setPreview] = useState(true);
@@ -406,10 +354,6 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
 
   const handleRemoveSubreddit = (subreddit: Subreddit) => (): void => {
     setPostTemplates(postTemplates.filter((post) => post.subreddit !== subreddit));
-  };
-
-  const handleDateTimeChange = (date: Dayjs | null): void => {
-    if (date) setDateTime(date);
   };
 
   const handleApplyAllTitle = (): void => {
@@ -526,11 +470,6 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
       return;
     }
 
-    if (dateTime.toDate().getTime() < Date.now() && !postNow) {
-      alert("The time selected is in the past. Please select a different time!");
-      return;
-    }
-
     const isAllFlairsSelected = !!postTemplates.find(
       (postTemplate) => !postTemplate.flair && postTemplate.subreddit.info.flairs.length
     );
@@ -547,7 +486,6 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
     const post: ClassicPost = {
       postDetails: postTemplates,
       imageLink: pixivDetails.imageLink,
-      dateTimeMS: dateTime.toDate().getTime(),
       comment: _comment,
     };
 
@@ -861,25 +799,16 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
           </ClearButton>
         </FlexWrapper>
         <Divider />
-        <h4>Date & Time</h4>
-        <NoSSR>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DateTimeWrapper>
-              <DatePicker defaultValue={dateTime} minDate={dayjs(Date.now())} onChange={handleDateTimeChange} />
-              <MobileTimePicker defaultValue={dateTime} minTime={dayjs(Date.now())} onChange={handleDateTimeChange} />
-              <CheckboxLabel>
-                <Checkbox type="checkbox" checked={postNow} onChange={handlePostNowChange} />
-                Post Now
-              </CheckboxLabel>
-            </DateTimeWrapper>
-          </LocalizationProvider>
-        </NoSSR>
         <CreditButtons>
           <Button onClick={createPost}>Create Post</Button>
         </CreditButtons>
         <CheckboxLabel>
           <Checkbox type="checkbox" checked={clearOnPost} onChange={handleClearOnPostChange} />
           Clear All Fields After Posting
+        </CheckboxLabel>
+        <CheckboxLabel>
+          <Checkbox type="checkbox" checked={postNow} onChange={handlePostNowChange} />
+          Post Now
         </CheckboxLabel>
       </DashboardContent>
     </>

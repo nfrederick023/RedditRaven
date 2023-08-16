@@ -1,6 +1,6 @@
 
 import { CommentRequest, SubmitRequest, SubmitResponse, SubredditAbout, SubredditFlair } from "@client/utils/types";
-import { creds } from "@server/credentials/creds";
+import { getCredentials } from "@server/utils/config";
 import { loadImage } from "./getPixivDetails";
 import FormData from "form-data";
 import Reddit from "reddit";
@@ -58,16 +58,32 @@ interface ParsedUTF8Data {
   }
 }
 
-/**
- * Reddit API Credentials 
- */
-const reddit: Reddit = new Reddit({
-  username: creds.REDDIT_USERNAME,
-  password: creds.PASSWORD,
-  appId: creds.APP_ID,
-  appSecret: creds.APP_SECRET,
-  userAgent: "nodejs:LankySeatDev:v0.1.5 (by u/LankySeat)"
-});
+let reddit: Reddit | undefined;
+
+
+const redditClient = (): Reddit => {
+
+  if (reddit)
+    return reddit;
+
+  const creds = getCredentials();
+
+  /**
+   * Reddit API Credentials 
+   */
+  const redditClient: Reddit = new Reddit({
+    username: creds.REDDIT_USERNAME,
+    password: creds.PASSWORD,
+    appId: creds.APP_ID,
+    appSecret: creds.APP_SECRET,
+    userAgent: "nodejs:LankySeatDev:v0.1.5 (by u/LankySeat)"
+  });
+
+  reddit = redditClient;
+
+  return redditClient;
+};
+
 
 /**
  * Retrieves the about.JSON for a subreddit
@@ -75,7 +91,7 @@ const reddit: Reddit = new Reddit({
  * @returns a lite version of the about.JSON data
  */
 export const getSubbredditAbout = async (subredditName: string): Promise<SubredditAbout> => {
-  const aboutRaw = (await reddit.get<SubredditAboutRaw>(`/r/${subredditName}/about.json`)).data;
+  const aboutRaw = (await redditClient().get<SubredditAboutRaw>(`/r/${subredditName}/about.json`)).data;
   return {
     url: aboutRaw.url,
     isCrosspostable: aboutRaw.is_crosspostable_subreddit,
@@ -90,7 +106,7 @@ export const getSubbredditAbout = async (subredditName: string): Promise<Subredd
  */
 export const getFlairsBySubbreddit = async (subredditName: string): Promise<SubredditFlair[]> => {
   try {
-    return (await reddit.get<SubredditFlairRaw[]>(`/r/${subredditName}/api/link_flair`))
+    return (await redditClient().get<SubredditFlairRaw[]>(`/r/${subredditName}/api/link_flair`))
       .map((flairRaw): SubredditFlair => {
         return {
           name: flairRaw.text,
@@ -117,7 +133,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       filepath,
       mimetype
     };
-    const uploadResponse = await reddit.post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
+    const uploadResponse = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
     const uploadURL = "https:" + uploadResponse.args.action;
     const formdata = new FormData();
 
@@ -156,7 +172,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     postRequest.url = uploadedImageLink;
 
     // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
-    reddit.post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
 
     // get the post link from the websocket
     const postLink = await getURL();
@@ -170,9 +186,9 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 };
 
 export const submitComment = async (commentReqeust: CommentRequest): Promise<SubmitResponse> => {
-  return await reddit.post<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
+  return await redditClient().post<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
 };
 
 export const submitPost = async (submitRequest: SubmitRequest): Promise<SubmitResponse> => {
-  return await reddit.post<SubmitResponse, CrosspostRequest>("/api/submit", submitRequest);
+  return await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", submitRequest);
 };

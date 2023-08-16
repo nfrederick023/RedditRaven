@@ -102,7 +102,6 @@ export interface ClassicPost {
   postDetails: ClassicPostTemplate[];
   comment: string;
   imageLink: string;
-  dateTimeMS: number;
 }
 
 export interface ClassicPostTemplate {
@@ -162,3 +161,12 @@ export interface CommentRequest {
 
 export type SuggestedImages = { suggestedImages: PixivDetails[] };
 export type SuggestedImagesReq = { pixivTag: PixivTag | undefined, page: string, slice: number, count: number; token: string };
+
+export interface Credentials {
+  SAUCENAO_KEY: string;
+  REDDIT_USERNAME: string;
+  PASSWORD: string;
+  APP_ID: string;
+  APP_SECRET: string;
+  PIXIV_TOKEN: string;
+}

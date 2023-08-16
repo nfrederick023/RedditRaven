@@ -20,8 +20,6 @@ const createPostClassic = async (req: NextApiRequest, res: NextApiResponse): Pro
     const postRequest: SubmitRequest = {
       title: postDetail.title,
       url: post.imageLink,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
       api_type: "json",
       sr: postDetail.subreddit.name,
       submit_type: "subreddit",

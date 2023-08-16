@@ -1,9 +1,10 @@
-import { Subreddit } from "../../src/utils/types";
+import { Credentials, Subreddit } from "../../src/utils/types";
 import { getFlairsBySubbreddit, getSubbredditAbout } from "@server/api/redditService";
 import fs from "fs-extra";
 
 const mainDir = "RedditRaven";
 const configDir = "config";
+const configJSON = "config.json";
 const subredditJSON = "subreddit_list.json";
 
 export const getPath = (): string => {
@@ -26,6 +27,10 @@ export const getSubredditsListPath = (): string => {
 
 export const setSubredditsList = (list: Subreddit[]): void => {
   fs.writeJSONSync(getSubredditsListPath(), list);
+};
+
+export const getCredentials = (): Credentials => {
+  return fs.readJSONSync(getConfigPath() + configJSON) as Credentials;
 };
 
 export const getSubredditsList = async (): Promise<Subreddit[]> => {
@@ -64,16 +69,6 @@ export const getSubredditsList = async (): Promise<Subreddit[]> => {
 
     if (typeof subreddit.pivixTags === "undefined") {
       newSubreddit.pivixTags = [];
-      isModified = true;
-    }
-
-    if (typeof subreddit.defaults.pixivTag?.title === "undefined" && newSubreddit.defaults.pixivTag) {
-      const originalTag = newSubreddit.pivixTags.find(tag => tag.enName === newSubreddit.defaults.pixivTag?.enName);
-      if (originalTag) {
-        newSubreddit.defaults.pixivTag.title = originalTag.title ?? originalTag.enName;
-      } else {
-        newSubreddit.defaults.pixivTag.title = newSubreddit.defaults.pixivTag.enName;
-      }
       isModified = true;
     }
 

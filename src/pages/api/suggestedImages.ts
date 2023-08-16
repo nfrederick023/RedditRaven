@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { SuggestedImagesReq } from "@client/utils/types";
-import { creds } from "@server/credentials/creds";
+import { getCredentials } from "@server/utils/config";
 import { getPixivIllustrations } from "@server/api/getPixivDetails";
+
+const creds = getCredentials();
 
 const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 

@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { PixivDetails } from "@client/utils/types";
-import { creds } from "@server/credentials/creds";
+import { getCredentials } from "@server/utils/config";
 import { getImageLink } from "@server/api/getPixivDetails";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
@@ -32,6 +32,8 @@ interface Sauce {
   results: SauceResult[];
 }
 
+const creds = getCredentials();
+
 const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 
   const form = new formidable.IncomingForm();
@@ -61,19 +63,26 @@ const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<v
       const isNumericFrame = frame.match(/^[0-9]+$/) !== null;
       const pixivDetails = await getImageLink(pixivID, isNumericFrame ? frame : "0");
 
-      const details: PixivDetails = {
-        imageLink: pixivDetails.imageLink,
-        description: pixivDetails.description,
-        title: pixivDetails.title,
-        artistLink,
-        pixivLink,
-        artistID,
-        pixivID,
-        artist,
-      };
+      if (pixivDetails) {
+        const details: PixivDetails = {
+          imageLink: pixivDetails.imageLink,
+          description: pixivDetails.description,
+          title: pixivDetails.title,
+          artistLink,
+          pixivLink,
+          artistID,
+          pixivID,
+          artist,
+          frame,
+          smallImageLink: pixivDetails.smallImageLink,
+          likeCount: pixivDetails.likeCount,
+          bookmarkCount: pixivDetails.bookmarkCount,
+          tags: pixivDetails.tags
+        };
 
-      if (details)
-        res.status(200).send(details);
+        if (details)
+          res.status(200).send(details);
+      }
 
     } else {
       res.status(400).send("The source could not be found.");

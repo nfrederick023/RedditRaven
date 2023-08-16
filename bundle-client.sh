@@ -6,8 +6,6 @@
 
 set -xe
 
-cd client
-
 TMPDIR="$(mktemp -d)"
 CLEANUP+=($TMPDIR)
 
@@ -17,8 +15,5 @@ cp package.json     $TMPDIR/app
 cp yarn.lock        $TMPDIR/app
 cp next.config.js   $TMPDIR/app
 cp -r .next         $TMPDIR/app
-cp -r config        $TMPDIR
-
-rm -f $TMPDIR/config/local.toml | true   # Don't deploy the local config file
 
 tar -czf docker-bundle.tgz -C $TMPDIR .
