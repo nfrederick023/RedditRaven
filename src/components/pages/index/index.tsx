@@ -280,22 +280,21 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     });
 
     setPosts(newPosts);
+    const postsWithImages: Post[] = [];
 
-    setPosts(
-      await Promise.all(
-        newPosts.map(async (post) => {
-          let suggestedImages: PixivDetails[] = [];
+    for (const post of newPosts) {
+      let suggestedImages: PixivDetails[] = [];
 
-          if (post.pixivTag) {
-            suggestedImages = await retrieveSuggestedImages(post, post.subreddit.currentPage);
-          }
+      if (post.pixivTag) {
+        suggestedImages = await retrieveSuggestedImages(post, post.subreddit.currentPage);
+      }
 
-          post.suggestedImages = suggestedImages;
-          post.isLoading = false;
-          return post;
-        })
-      )
-    );
+      post.suggestedImages = suggestedImages;
+      post.isLoading = false;
+      postsWithImages.push(post);
+    }
+
+    setPosts(postsWithImages);
   };
 
   const retrieveSuggestedImages = async (post: Post, page: string): Promise<PixivDetails[]> => {
