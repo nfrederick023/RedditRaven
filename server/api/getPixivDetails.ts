@@ -166,7 +166,7 @@ export const getImageURL = async (baseURL: string, pixivID: string, frame: strin
   } catch (e) {
 
     // eslint-disable-next-line no-console
-    console.warn("Failed to get image URL!");
+    console.warn("Failed to get image URL!\n" + e);
   }
 };
 
