@@ -5,6 +5,7 @@ import { loadImage } from "./getPixivDetails";
 import FormData from "form-data";
 import Reddit from "reddit";
 import WebSocket from "websocket";
+import axios from "axios";
 import fs from "fs-extra";
 
 interface SubredditAboutRaw {
@@ -146,8 +147,8 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       return uploadLease.args.fields.find(item => item.name === name) ?? undefined;
     };
 
-    //const items: FieldName[] = ["acl", "Content-Type", "key", "policy", "success_action_status", "x-amz-algorithm", "x-amz-credential", "x-amz-date", "x-amz-security-token", "x-amz-signature", "x-amz-storage-class", "x-amz-meta-ext", "bucket"];
-    const items: FieldName[] = ["key", "x-amz-algorithm", "x-amz-date", "x-amz-storage-class", "success_action_status", "bucket", "acl", "x-amz-signature", "x-amz-security-token", "x-amz-meta-ext", "policy", "x-amz-credential", "Content-Type"];
+    const items: FieldName[] = ["acl", "Content-Type", "key", "policy", "success_action_status", "x-amz-algorithm", "x-amz-credential", "x-amz-date", "x-amz-security-token", "x-amz-signature", "x-amz-storage-class", "x-amz-meta-ext", "bucket"];
+    //const items: FieldName[] = ["key", "x-amz-algorithm", "x-amz-date", "x-amz-storage-class", "success_action_status", "bucket", "acl", "x-amz-signature", "x-amz-security-token", "x-amz-meta-ext", "policy", "x-amz-credential", "Content-Type"];
 
     const allLeaseItems: UploadResponseField[] = [];
 
@@ -159,30 +160,29 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     }
 
     const imageData = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
-    await fs.writeFile(filepath, imageData);
 
     //const buffer = Buffer.from(await (blob).arrayBuffer());
     allLeaseItems.forEach(item => formdata.append(item.name, item.value));
-    formdata.append("file", await fs.readFile(filepath));
-    //console.log(formdata);
+    formdata.append("file", imageData);
 
-    // upload the image
-    const res = await fetch(uploadURL, {
-      method: "PUT",
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
+
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+
+    // I WASTED 15 HOURS ON THIS STUPID SHIT
+
+    // FUCK YOU NODE FETCH!!!!!!!!!!!!
+    await axios({
+      method: "POST",
+      url: uploadURL,
+      data: formdata,
       headers: formdata.getHeaders(),
-      // ignore the error on thie line because it works and fetch is just being dumb asf
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
-      body: formdata
     });
 
-    console.log("Was fetch okay: " + res.ok);
-    console.log("Status: " + res.status);
-    console.log("Text: " + await res.text());
-
-    return "";
 
     const WebSocketClient = new WebSocket.client;
     const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
@@ -214,22 +214,14 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       });
     };
 
-
-
-    console.log(uploadedImageLink);
     postRequest.url = uploadedImageLink;
 
-    try {
-      // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
-      //await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
-    } catch (e) {
-      console.log(e);
-      //
-    }
+    // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
+    await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
+
     // get the post link from the websocket
     const postLink = await getURL(connection);
 
-    console.log(postLink);
     // parse the thing_id out from the post link, and return the thing_id to be used for making comments 
     const thing_id = "t3_" + postLink.split("comments/")[1].split("/")[0];
     return thing_id;
