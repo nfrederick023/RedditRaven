@@ -1,10 +1,12 @@
-
+/* eslint-disable no-unreachable */
 import { CommentRequest, SubmitRequest, SubmitResponse, SubredditAbout, SubredditFlair } from "@client/utils/types";
 import { getCredentials } from "@server/utils/config";
 import { loadImage } from "./getPixivDetails";
 import FormData from "form-data";
 import Reddit from "reddit";
 import WebSocket from "websocket";
+import axios from "axios";
+import fs from "fs-extra";
 
 interface SubredditAboutRaw {
   readonly data: {
@@ -28,15 +30,17 @@ interface UploadRequest {
   mimetype: string;
 }
 
-interface UploadResponseFields {
-  name: string;
+type FieldName = "key" | "x-amz-algorithm" | "x-amz-date" | "x-amz-storage-class" | "success_action_status" | "bucket" | "acl" | "x-amz-signature" | "x-amz-security-token" | "x-amz-meta-ext" | "policy" | "x-amz-credential" | "Content-Type";
+
+interface UploadResponseField {
+  name: FieldName;
   value: string;
 }
 
 interface UploadResponse {
   args: {
     action: string,
-    fields: UploadResponseFields[]
+    fields: UploadResponseField[]
   },
   asset: {
     asset_id: string;
@@ -62,6 +66,7 @@ let reddit: Reddit | undefined;
 
 
 const redditClient = (): Reddit => {
+
 
   if (reddit)
     return reddit;
@@ -123,59 +128,99 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 
   if (postRequest.url) {
     const imageResponse = await loadImage(postRequest.url);
+    // await new Promise(resolve => setTimeout(resolve, 15000));
 
     const mimetype = imageResponse.headers.get("content-type") ?? "";
-    const buffer = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
     const filepath = postRequest.url.split("/").pop() || "";
 
-    // get the upload credentials for reddit
     const uploadImageRequest = {
       filepath,
       mimetype
     };
-    const uploadResponse = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
-    const uploadURL = "https:" + uploadResponse.args.action;
+
+    const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
+    //await new Promise(resolve => setTimeout(resolve, 15000));
+    const uploadURL = "https:" + uploadLease.args.action;
     const formdata = new FormData();
 
-    uploadResponse.args.fields.forEach(item => formdata.append(item.name, item.value));
-    formdata.append("file", buffer, filepath);
+    const getItemByName = (name: FieldName): UploadResponseField | undefined => {
+      return uploadLease.args.fields.find(item => item.name === name) ?? undefined;
+    };
 
-    // upload the image
-    await fetch(uploadURL, {
+    const items: FieldName[] = ["acl", "Content-Type", "key", "policy", "success_action_status", "x-amz-algorithm", "x-amz-credential", "x-amz-date", "x-amz-security-token", "x-amz-signature", "x-amz-storage-class", "x-amz-meta-ext", "bucket"];
+    //const items: FieldName[] = ["key", "x-amz-algorithm", "x-amz-date", "x-amz-storage-class", "success_action_status", "bucket", "acl", "x-amz-signature", "x-amz-security-token", "x-amz-meta-ext", "policy", "x-amz-credential", "Content-Type"];
+
+    const allLeaseItems: UploadResponseField[] = [];
+
+    for (const item of items) {
+      const leaseItem = getItemByName(item);
+      if (leaseItem) {
+        allLeaseItems.push(leaseItem);
+      }
+    }
+
+    const imageData = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
+
+    //const buffer = Buffer.from(await (blob).arrayBuffer());
+    allLeaseItems.forEach(item => formdata.append(item.name, item.value));
+    formdata.append("file", imageData);
+
+
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+    // FUCK NODE FETCH!!
+
+    // I WASTED 15 HOURS ON THIS STUPID SHIT
+
+    // FUCK YOU NODE FETCH!!!!!!!!!!!!
+    await axios({
       method: "POST",
-      // ignore the error on thie line because it works and fetch is just being dumb asf
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
-      body: formdata,
+      url: uploadURL,
+      data: formdata,
+      headers: formdata.getHeaders(),
     });
 
+
     const WebSocketClient = new WebSocket.client;
-    const uploadedImageLink = uploadURL + "/" + uploadResponse.args.fields.find(item => item.name === "key")?.value;
-    const websocket_url = uploadResponse.asset.websocket_url;
+    const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
+    const websocket_url = uploadLease.asset.websocket_url;
     // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
     WebSocketClient.connect(websocket_url);
-    const getURL = (): Promise<string> => {
+    const getConnection = (): Promise<WebSocket.connection> => {
       return new Promise(function (resolve, reject) {
         WebSocketClient.on("connect", connection => {
-          connection.on("message", (message) => {
-            const msg = message as PostUploadedImageWSMessage;
-            const parsedUTF8Data = JSON.parse(msg.utf8Data) as ParsedUTF8Data;
-            connection.close();
-            resolve(parsedUTF8Data.payload.redirect);
-          });
-          connection.on("error", err => {
-            reject(err);
-          });
+          resolve(connection);
         });
       });
     };
+
+    const connection = await getConnection();
+
+    const getURL = (connection: WebSocket.connection): Promise<string> => {
+      return new Promise(function (resolve, reject) {
+        connection.on("message", (message) => {
+          console.log(message);
+          const msg = message as PostUploadedImageWSMessage;
+          const parsedUTF8Data = JSON.parse(msg.utf8Data) as ParsedUTF8Data;
+          connection.close();
+          resolve(parsedUTF8Data.payload.redirect);
+        });
+        connection.on("error", err => {
+          reject(err);
+        });
+      });
+    };
+
     postRequest.url = uploadedImageLink;
 
     // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
-    redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
 
     // get the post link from the websocket
-    const postLink = await getURL();
+    const postLink = await getURL(connection);
 
     // parse the thing_id out from the post link, and return the thing_id to be used for making comments 
     const thing_id = "t3_" + postLink.split("comments/")[1].split("/")[0];

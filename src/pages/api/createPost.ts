@@ -32,6 +32,8 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   for (const post of posts) {
     const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
       if (post.selectedImage) {
+        console.log("Getting image!");
+
         const link = await getImageURL(post.selectedImage.smallImageLink, post.selectedImage.pixivID, post.selectedImage.frame);
         if (link) {
           const postRequest: SubmitRequest = {
@@ -49,7 +51,9 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
             post_to_twitter: false,
             spoiler: false
           };
+
           const imagePostResponse = await submitImagePost(postRequest);
+          console.log("Moving onto comment");
 
           const commentReqeust: CommentRequest = {
             text: post.comment,
@@ -57,8 +61,11 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
           };
 
           if (post.comment) {
+            console.log("post comment");
+
             await submitComment(commentReqeust);
           }
+          console.log("next is crosspsots");
 
           postRequest.kind = "crosspost";
           postRequest.crosspost_fullname = imagePostResponse;
@@ -71,6 +78,7 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
               await submitComment(commentReqeust);
             }
           }
+          console.log("finished crossposting.");
 
         } else {
           // eslint-disable-next-line no-console
@@ -82,6 +90,8 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     generatePost(post.subreddit, post.flair);
 
     for (const multipost of post.multipost) {
+      console.log("multipost.");
+
       const selectedSubreddit = subreddits.find(subreddit => subreddit.name === multipost);
 
       if (selectedSubreddit)
