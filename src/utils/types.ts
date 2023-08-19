@@ -94,7 +94,7 @@ export interface Post {
   title: string;
   isLoading: boolean;
   multipost: string[];
-  crossposts: string[];
+  crossposts: Subreddit[];
   customLink: string;
 }
 

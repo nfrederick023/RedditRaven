@@ -67,11 +67,14 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
             await submitComment(commentReqeust);
           }
 
+          delete postRequest.url;
+          delete postRequest.flair_id;
           postRequest.kind = "crosspost";
           postRequest.crosspost_fullname = imagePostResponse;
 
           for (const crosspost of post.crossposts) {
-            postRequest.sr = crosspost;
+            postRequest.sr = crosspost.name;
+            postRequest.flair_id = crosspost.defaults.flair?.id;
             const postResponse = await submitPost(postRequest);
             commentReqeust.thing_id = postResponse.json.data.name;
             if (post.comment) {
