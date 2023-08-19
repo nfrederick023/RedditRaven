@@ -1,11 +1,18 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { SuggestedImagesReq } from "@client/utils/types";
+import { checkHashedPassword } from "@server/utils/auth";
 import { getCredentials } from "@server/utils/config";
 import { getPixivIllustrations } from "@server/api/getPixivDetails";
 
 const creds = getCredentials();
 
 const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+
+  if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
+    res.statusCode = 401;
+    res.end(JSON.stringify("Unauthorized"));
+    return;
+  }
 
   if (req.method !== "POST") {
     res.status(405).json({ message: "Method not allowed" });

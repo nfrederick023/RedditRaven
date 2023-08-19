@@ -1,17 +1,16 @@
 import { AppProps } from "next/app";
-import { BluJayTheme } from "@client/utils/types";
+import { CookieTypes } from "@client/utils/types";
 import { Cookies, CookiesProvider } from "react-cookie";
 import { ReactElement } from "react";
-import { Request } from "express";
-import { darkTheme, lightTheme } from "@client/utils/themes";
+import { darkTheme } from "@client/utils/themes";
 import { getCookieDefault, getCookieSetOptions } from "../utils/cookies";
-import App from "next/app";
+import { useRouter } from "next/router";
 import Header from "@client/components/common/layout/header/header";
 import React from "react";
 import Sidebar from "@client/components/common/layout/sidebar/sidebar";
-import cookies from "next-cookies";
 import getConfig from "next/config";
 import styled, { ThemeProvider, createGlobalStyle } from "styled-components";
+
 const { publicRuntimeConfig } = getConfig();
 
 const GlobalStyle = createGlobalStyle`
@@ -166,57 +165,40 @@ const ContentWrapper = styled.div`
   max-width: 1600px;
 `;
 
-type NextAppComponentType = typeof App;
-interface ExtendedAppProps extends AppProps {
-  appCookies: { [key: string]: string | boolean | number };
-  theme: BluJayTheme;
-}
+const MyApp = ({ Component, pageProps }: AppProps): ReactElement => {
+  const router = useRouter();
+  const _cookies = new Cookies();
+  const allCookieTypes: CookieTypes[] = ["authToken"];
 
-const MyApp: Omit<NextAppComponentType, "origGetInitialProps"> = ({
-  Component,
-  pageProps,
-  appCookies,
-  theme,
-}: ExtendedAppProps): ReactElement => {
-  // assign default values to cookies if not set
-  const cookies = new Cookies(appCookies);
-  for (const [cookie, value] of Object.entries(appCookies))
-    if (value === "") cookies.set(cookie, getCookieDefault(cookie), getCookieSetOptions());
+  allCookieTypes.forEach((cookieType) => {
+    if (!_cookies.get(cookieType)) _cookies.set(cookieType, getCookieDefault(cookieType), getCookieSetOptions());
+  });
 
   return (
     <>
       <title>{publicRuntimeConfig.pageTitle}</title>
-      <CookiesProvider cookies={cookies}>
-        <ThemeProvider theme={theme}>
+      <CookiesProvider cookies={_cookies}>
+        <ThemeProvider theme={darkTheme}>
           <GlobalStyle />
           <LayoutWrapper>
-            <Sidebar />
-            <MainContent>
-              <ContentWrapper>
-                <Header />
-                <Component {...pageProps} />
-              </ContentWrapper>
-            </MainContent>
+            {router.pathname.includes("/login") ? (
+              <Component {...pageProps} />
+            ) : (
+              <>
+                <Sidebar />
+                <MainContent>
+                  <ContentWrapper>
+                    <Header />
+                    <Component {...pageProps} />
+                  </ContentWrapper>
+                </MainContent>
+              </>
+            )}
           </LayoutWrapper>
         </ThemeProvider>
       </CookiesProvider>
     </>
   );
-};
-
-MyApp.getInitialProps = async (initialProps): Promise<ExtendedAppProps> => {
-  const { ctx } = initialProps;
-
-  // cast as request to pull out cookies
-  const request = ctx.req as Request | undefined;
-  const theme = cookies(ctx)?.isDarkMode === "true" ? darkTheme : lightTheme;
-  // run the default getInitialProps for the main nextjs initialProps
-  const appInitialProps = (await App.getInitialProps(initialProps)) as AppProps;
-  return {
-    appCookies: request?.cookies ?? [],
-    theme,
-    ...appInitialProps,
-  };
 };
 
 export default MyApp;

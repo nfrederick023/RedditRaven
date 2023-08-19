@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { PixivDetails } from "@client/utils/types";
+import { checkHashedPassword } from "@server/utils/auth";
 import { getCredentials } from "@server/utils/config";
 import { getImageLink } from "@server/api/getPixivDetails";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -35,6 +36,12 @@ interface Sauce {
 const creds = getCredentials();
 
 const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+
+  if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
+    res.statusCode = 401;
+    res.end(JSON.stringify("Unauthorized"));
+    return;
+  }
 
   const form = new formidable.IncomingForm();
   form.parse(req, async (err, fields, files) => {
