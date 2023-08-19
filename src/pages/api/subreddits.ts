@@ -1,9 +1,16 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Subreddit } from "@client/utils/types";
+import { checkHashedPassword } from "@server/utils/auth";
 import { getFlairsBySubbreddit, getSubbredditAbout } from "@server/api/redditService";
 import { getSubredditsList, setSubredditsList } from "@server/utils/config";
 
 const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+
+  if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
+    res.statusCode = 401;
+    res.end(JSON.stringify("Unauthorized"));
+    return;
+  }
 
   if (req.method !== "POST" && req.method !== "DELETE" && req.method !== "PUT") {
     res.status(405).json({ message: "Method not allowed" });

@@ -437,10 +437,11 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
   const handleCrosspostChange = (postToUpdate: Post) => {
     return (crossposts: string[]): void => {
+      const matchingSubreddits = subreddits.filter((subreddit) => crossposts.includes(subreddit.name));
       setPosts(
         posts.map((post) => {
           if (post.subreddit.name === postToUpdate.subreddit.name) {
-            post.crossposts = crossposts;
+            post.crossposts = matchingSubreddits;
           }
           return post;
         })
@@ -721,7 +722,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                         <Select
                           options={crossPostableSubs.map((sub) => sub.name)}
                           onChange={handleCrosspostChange(post)}
-                          value={post.crossposts}
+                          value={post.crossposts.map((crosspost) => crosspost.name)}
                           isMulti
                           isClearable
                         />

@@ -94,7 +94,7 @@ export interface Post {
   title: string;
   isLoading: boolean;
   multipost: string[];
-  crossposts: string[];
+  crossposts: Subreddit[];
   customLink: string;
 }
 
@@ -165,8 +165,11 @@ export type SuggestedImagesReq = { pixivTag: PixivTag | undefined, page: string,
 export interface Credentials {
   SAUCENAO_KEY: string;
   REDDIT_USERNAME: string;
-  PASSWORD: string;
+  REDDIT_PASSWORD: string;
   APP_ID: string;
   APP_SECRET: string;
   PIXIV_TOKEN: string;
+  PASSWORD: string;
 }
+
+export type CookieTypes = "authToken"

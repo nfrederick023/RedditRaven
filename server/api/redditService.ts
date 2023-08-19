@@ -1,4 +1,3 @@
-/* eslint-disable no-unreachable */
 import { CommentRequest, SubmitRequest, SubmitResponse, SubredditAbout, SubredditFlair } from "@client/utils/types";
 import { getCredentials } from "@server/utils/config";
 import { loadImage } from "./getPixivDetails";
@@ -6,7 +5,6 @@ import FormData from "form-data";
 import Reddit from "reddit";
 import WebSocket from "websocket";
 import axios from "axios";
-import fs from "fs-extra";
 
 interface SubredditAboutRaw {
   readonly data: {
@@ -78,7 +76,7 @@ const redditClient = (): Reddit => {
    */
   const redditClient: Reddit = new Reddit({
     username: creds.REDDIT_USERNAME,
-    password: creds.PASSWORD,
+    password: creds.REDDIT_PASSWORD,
     appId: creds.APP_ID,
     appSecret: creds.APP_SECRET,
     userAgent: "nodejs:LankySeatDev:v0.1.5 (by u/LankySeat)"
@@ -190,7 +188,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
     WebSocketClient.connect(websocket_url);
     const getConnection = (): Promise<WebSocket.connection> => {
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve,) {
         WebSocketClient.on("connect", connection => {
           resolve(connection);
         });
@@ -202,7 +200,6 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     const getURL = (connection: WebSocket.connection): Promise<string> => {
       return new Promise(function (resolve, reject) {
         connection.on("message", (message) => {
-          console.log(message);
           const msg = message as PostUploadedImageWSMessage;
           const parsedUTF8Data = JSON.parse(msg.utf8Data) as ParsedUTF8Data;
           connection.close();

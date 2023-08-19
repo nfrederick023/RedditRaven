@@ -1,5 +1,6 @@
 import { CommentRequest, Post, SubmitRequest, Subreddit, SubredditFlair } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
+import { checkHashedPassword } from "@server/utils/auth";
 import { getImageURL } from "@server/api/getPixivDetails";
 import { getSubredditsList, setSubredditsList } from "@server/utils/config";
 import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
@@ -13,6 +14,12 @@ export const config = {
 };
 
 const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+
+  if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
+    res.statusCode = 401;
+    res.end(JSON.stringify("Unauthorized"));
+    return;
+  }
 
   if (req.method !== "POST") {
     res.status(405).json({ message: "Method not allowed" });
@@ -32,8 +39,6 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   for (const post of posts) {
     const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
       if (post.selectedImage) {
-        console.log("Getting image!");
-
         const link = await getImageURL(post.selectedImage.smallImageLink, post.selectedImage.pixivID, post.selectedImage.frame);
         if (link) {
           const postRequest: SubmitRequest = {
@@ -53,33 +58,29 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
           };
 
           const imagePostResponse = await submitImagePost(postRequest);
-          console.log("Moving onto comment");
-
           const commentReqeust: CommentRequest = {
             text: post.comment,
             thing_id: imagePostResponse,
           };
 
           if (post.comment) {
-            console.log("post comment");
-
             await submitComment(commentReqeust);
           }
-          console.log("next is crosspsots");
 
+          delete postRequest.url;
+          delete postRequest.flair_id;
           postRequest.kind = "crosspost";
           postRequest.crosspost_fullname = imagePostResponse;
 
           for (const crosspost of post.crossposts) {
-            postRequest.sr = crosspost;
+            postRequest.sr = crosspost.name;
+            postRequest.flair_id = crosspost.defaults.flair?.id;
             const postResponse = await submitPost(postRequest);
             commentReqeust.thing_id = postResponse.json.data.name;
             if (post.comment) {
               await submitComment(commentReqeust);
             }
           }
-          console.log("finished crossposting.");
-
         } else {
           // eslint-disable-next-line no-console
           console.warn("Failed to create post. No link retrieved!\nSubreddit:" + post.subreddit.name);
@@ -90,8 +91,6 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     generatePost(post.subreddit, post.flair);
 
     for (const multipost of post.multipost) {
-      console.log("multipost.");
-
       const selectedSubreddit = subreddits.find(subreddit => subreddit.name === multipost);
 
       if (selectedSubreddit)

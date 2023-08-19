@@ -1,5 +1,5 @@
 import { BluJayTheme } from "@client/utils/types";
-import React, { FC, useRef, useState } from "react";
+import React, { FC, KeyboardEvent, useRef, useState } from "react";
 import styled from "styled-components";
 
 const TextFieldContent = styled.div`
@@ -36,16 +36,20 @@ const TextFieldInput = styled.input`
 
 interface TextFieldProps {
   onChange: (text: string) => void;
+  onEnter?: () => void;
   value: string;
   placeholder: string;
   prefix?: string;
+  hideInput?: boolean;
 }
 
 const TextField: FC<TextFieldProps> = ({
   onChange,
+  onEnter,
   value,
   placeholder,
   prefix,
+  hideInput,
 }: TextFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -66,20 +70,22 @@ const TextField: FC<TextFieldProps> = ({
     setIsFocused(false);
   };
 
+  const handleKeyUp = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === "Enter" && onEnter) {
+      onEnter();
+    }
+  };
+
   return (
-    <TextFieldContent
-      onClick={handleClick}
-      tabIndex={0}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      isFocused={isFocused}
-    >
+    <TextFieldContent onClick={handleClick} tabIndex={0} onFocus={onFocus} onBlur={onBlur} isFocused={isFocused}>
       {prefix}
       <TextFieldInput
         ref={input}
         onChange={handleInput}
+        onKeyUp={handleKeyUp}
         placeholder={placeholder}
         value={value}
+        type={hideInput ? "password" : "text"}
       />
     </TextFieldContent>
   );
