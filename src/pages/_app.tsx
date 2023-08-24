@@ -8,10 +8,7 @@ import { useRouter } from "next/router";
 import Header from "@client/components/common/layout/header/header";
 import React from "react";
 import Sidebar from "@client/components/common/layout/sidebar/sidebar";
-import getConfig from "next/config";
 import styled, { ThemeProvider, createGlobalStyle } from "styled-components";
-
-const { publicRuntimeConfig } = getConfig();
 
 const GlobalStyle = createGlobalStyle`
 html {
@@ -176,7 +173,7 @@ const MyApp = ({ Component, pageProps }: AppProps): ReactElement => {
 
   return (
     <>
-      <title>{publicRuntimeConfig.pageTitle}</title>
+      <title>RedditRaven</title>
       <CookiesProvider cookies={_cookies}>
         <ThemeProvider theme={darkTheme}>
           <GlobalStyle />

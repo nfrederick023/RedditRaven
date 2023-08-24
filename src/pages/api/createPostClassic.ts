@@ -1,4 +1,4 @@
-import { ClassicPost, CommentRequest, SubmitRequest } from "@client/utils/types";
+import { ClassicPost, CommentRequest, SubmissionErrors, SubmitRequest } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
 import { checkHashedPassword } from "@server/utils/auth";
 import { submitComment, submitImagePost } from "@server/api/redditService";
@@ -23,32 +23,43 @@ const createPostClassic = async (req: NextApiRequest, res: NextApiResponse): Pro
     return;
   }
 
-  post.postDetails.forEach(async postDetail => {
-    const postRequest: SubmitRequest = {
-      title: postDetail.title,
-      url: post.imageLink,
-      api_type: "json",
-      sr: postDetail.subreddit.name,
-      submit_type: "subreddit",
-      nsfw: postDetail.tags.includes("NSFW"),
-      flair_id: postDetail.flair?.id,
-      kind: "image",
-      sendreplies: true,
-      validate_on_submit: true,
-      original_content: false,
-      post_to_twitter: false,
-      spoiler: false
-    };
+  const errors: SubmissionErrors[] = [];
 
-    const postResponse = await submitImagePost(postRequest);
-    if (post.comment) {
-      const commentReqeust: CommentRequest = {
-        text: post.comment,
-        thing_id: postResponse,
+  for (const postDetail of post.postDetails) {
+    try {
+      const postRequest: SubmitRequest = {
+        title: postDetail.title,
+        url: post.imageLink,
+        api_type: "json",
+        sr: postDetail.subreddit.name,
+        submit_type: "subreddit",
+        nsfw: postDetail.tags.includes("NSFW"),
+        flair_id: postDetail.flair?.id,
+        kind: "image",
+        sendreplies: true,
+        validate_on_submit: true,
+        original_content: false,
+        post_to_twitter: false,
+        spoiler: false
       };
-      await submitComment(commentReqeust);
+
+
+      const postResponse = await submitImagePost(postRequest);
+      if (post.comment) {
+        const commentReqeust: CommentRequest = {
+          text: post.comment,
+          thing_id: postResponse,
+        };
+        await submitComment(commentReqeust);
+      }
+    } catch (e) {
+      errors.push({ subredditName: postDetail.subreddit.name, error: e });
     }
-  });
+  }
+
+  if (errors.length) {
+    res.status(400).json(errors);
+  }
 
   res.end();
 };

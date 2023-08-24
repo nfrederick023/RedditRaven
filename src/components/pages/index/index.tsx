@@ -1,4 +1,12 @@
-import { BluJayTheme, PixivDetails, Post, Subreddit, SuggestedImages, SuggestedImagesReq } from "@client/utils/types";
+import {
+  BluJayTheme,
+  PixivDetails,
+  Post,
+  SubmissionErrors,
+  Subreddit,
+  SuggestedImages,
+  SuggestedImagesReq,
+} from "@client/utils/types";
 import React, { FC, useEffect, useRef, useState } from "react";
 import Select from "@client/components/common/shared/select";
 import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
@@ -368,21 +376,33 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const handleImageChange = (postToUpdate: Post, image: PixivDetails) => (): void => {
-    const parsedArtistName = image.artist.split("@")[0];
-    const defaultTitle = postToUpdate.subreddit.defaults.title;
-    let title = "";
-    if (defaultTitle) title = defaultTitle + " ";
-    if (postToUpdate.pixivTag?.title) title += postToUpdate.pixivTag.title + " ";
-    title += "(by " + parsedArtistName + ")";
-    setPosts(
-      posts.map((post) => {
-        if (post.subreddit.name === postToUpdate.subreddit.name) {
-          post.selectedImage = image;
-          post.title = title;
-        }
-        return post;
-      })
-    );
+    if (postToUpdate.selectedImage?.pixivID !== image.pixivID) {
+      const parsedArtistName = image.artist.split("@")[0];
+      const defaultTitle = postToUpdate.subreddit.defaults.title;
+      let title = "";
+      if (defaultTitle) title = defaultTitle + " ";
+      if (postToUpdate.pixivTag?.title) title += postToUpdate.pixivTag.title + " ";
+      title += "(by " + parsedArtistName + ")";
+      setPosts(
+        posts.map((post) => {
+          if (post.subreddit.name === postToUpdate.subreddit.name) {
+            post.selectedImage = image;
+            post.title = title;
+          }
+          return post;
+        })
+      );
+    } else {
+      setPosts(
+        posts.map((post) => {
+          if (post.subreddit.name === postToUpdate.subreddit.name) {
+            post.selectedImage = undefined;
+            post.title = post.subreddit.defaults.pixivTag?.title ?? "";
+          }
+          return post;
+        })
+      );
+    }
   };
 
   const handleLinkChange = (postToUpdate: Post) => {
@@ -407,15 +427,27 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         }
       }
 
-      setPosts(
-        posts.map((post) => {
-          if (post.subreddit.name === postToUpdate.subreddit.name && pixivDetails) {
-            post.selectedImage = pixivDetails;
-            post.suggestedImages = [pixivDetails];
-          }
-          return post;
-        })
-      );
+      if (pixivDetails) {
+        const parsedArtistName = pixivDetails.artist.split("@")[0];
+        const defaultTitle = postToUpdate.subreddit.defaults.title;
+        let title = "";
+        if (defaultTitle) title = defaultTitle + " ";
+        if (postToUpdate.pixivTag?.title) title += postToUpdate.pixivTag.title + " ";
+        title += "(by " + parsedArtistName + ")";
+
+        setPosts(
+          posts.map((post) => {
+            if (post.subreddit.name === postToUpdate.subreddit.name && pixivDetails) {
+              post.selectedImage = pixivDetails;
+              post.suggestedImages = [pixivDetails];
+              post.title = title;
+            }
+            return post;
+          })
+        );
+      } else {
+        alert("Failed to get Pixiv Details!");
+      }
     };
   };
 
@@ -553,7 +585,22 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     const res = await createRedditPost(compiledPosts);
 
     if (res.ok) {
-      window.location.reload();
+      const resText = (await res.text()).trim();
+
+      if (resText.length) {
+        try {
+          const errors = JSON.parse(resText) as SubmissionErrors[];
+          alert(
+            "ERROR: One or more posts failed!\nSubreddits: " + errors.map((error) => error.subredditName).toString()
+          );
+        } catch (e) {
+          alert("ERROR: One or more posts failed!\nSubreddits: " + resText);
+        }
+      } else {
+        alert("Success!");
+      }
+    } else {
+      alert("Request Failed!");
     }
   };
 

@@ -173,3 +173,8 @@ export interface Credentials {
 }
 
 export type CookieTypes = "authToken"
+
+export interface SubmissionErrors {
+  subredditName: string;
+  error: unknown;
+}

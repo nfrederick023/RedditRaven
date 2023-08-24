@@ -1,4 +1,4 @@
-import { CommentRequest, Post, SubmitRequest, Subreddit, SubredditFlair } from "@client/utils/types";
+import { CommentRequest, Post, SubmissionErrors, SubmitRequest, Subreddit, SubredditFlair } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
 import { checkHashedPassword } from "@server/utils/auth";
 import { getImageURL } from "@server/api/getPixivDetails";
@@ -34,7 +34,14 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     return;
   }
 
+  let eightKBString = "";
+  for (let i = 0; i < 1024 * 8; i++) {
+    eightKBString += "\n";
+  }
+
   const subreddits = await getSubredditsList();
+  const errors: SubmissionErrors[] = [];
+  const queuedPosts: Promise<void>[] = [];
 
   for (const post of posts) {
     const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
@@ -57,46 +64,57 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
             spoiler: false
           };
 
-          const imagePostResponse = await submitImagePost(postRequest);
-          const commentReqeust: CommentRequest = {
-            text: post.comment,
-            thing_id: imagePostResponse,
-          };
+          try {
+            const imagePostResponse = await submitImagePost(postRequest);
+            const commentReqeust: CommentRequest = {
+              text: post.comment,
+              thing_id: imagePostResponse,
+            };
 
-          if (post.comment) {
-            await submitComment(commentReqeust);
-          }
-
-          delete postRequest.url;
-          delete postRequest.flair_id;
-          postRequest.kind = "crosspost";
-          postRequest.crosspost_fullname = imagePostResponse;
-
-          for (const crosspost of post.crossposts) {
-            postRequest.sr = crosspost.name;
-            postRequest.flair_id = crosspost.defaults.flair?.id;
-            const postResponse = await submitPost(postRequest);
-            commentReqeust.thing_id = postResponse.json.data.name;
             if (post.comment) {
               await submitComment(commentReqeust);
             }
+
+            delete postRequest.url;
+            delete postRequest.flair_id;
+            postRequest.kind = "crosspost";
+            postRequest.crosspost_fullname = imagePostResponse;
+
+            for (const crosspost of post.crossposts) {
+              postRequest.sr = crosspost.name;
+              postRequest.flair_id = crosspost.defaults.flair?.id;
+              const postResponse = await submitPost(postRequest);
+              commentReqeust.thing_id = postResponse.json.data.name;
+              if (post.comment) {
+                await submitComment(commentReqeust);
+              }
+            }
+          } catch (e) {
+            errors.push({ subredditName: post.subreddit.name, error: e });
           }
+
+          // this is needed because cloudflare sucks dick
+          // https://github.com/marcialpaulg/Fixing-Cloudflare-Error-524
+          res.write(eightKBString);
         } else {
           // eslint-disable-next-line no-console
           console.warn("Failed to create post. No link retrieved!\nSubreddit:" + post.subreddit.name);
         }
       }
     };
-
-    generatePost(post.subreddit, post.flair);
+    queuedPosts.push(generatePost(post.subreddit, post.flair));
 
     for (const multipost of post.multipost) {
       const selectedSubreddit = subreddits.find(subreddit => subreddit.name === multipost);
 
-      if (selectedSubreddit)
-        generatePost(selectedSubreddit, selectedSubreddit.defaults.flair);
+      if (selectedSubreddit) {
+        await generatePost(selectedSubreddit, selectedSubreddit.defaults.flair);
+        queuedPosts.push(generatePost(post.subreddit, post.flair));
+      }
     }
   }
+
+  await Promise.all(queuedPosts);
 
   subreddits.map(subreddit => {
     const matchingPost = posts.find(post => post.subreddit.name === subreddit.name);
@@ -107,7 +125,14 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   });
 
   setSubredditsList(subreddits);
-  res.status(201);
+
+  if (errors.length) {
+    res.write(JSON.stringify(errors));
+    res.status(400);
+  } else {
+    res.status(201);
+  }
+
   res.end();
   return;
 };

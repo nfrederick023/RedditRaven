@@ -1,6 +1,5 @@
 import { screenSizes } from "@client/utils/themes";
 import { useWindowWidth } from "@react-hook/window-size";
-import Gradient from "../../shared/gradient";
 import NoSSR from "@mpth/react-no-ssr";
 import PageButton from "./page-button";
 import React, { FC, useEffect, useState } from "react";
@@ -25,7 +24,7 @@ const SidebarWapper = styled.div`
     ${(props: { isCollapsed: boolean }): string => (props.isCollapsed ? "min-width: 60px; left: -60px;" : "")}
   }
 
-  ${(props: { isCollapsed: boolean }): string => (props.isCollapsed ? "max-width: 48px; min-width: 48px;" : "")}
+  ${(props: { isCollapsed: boolean }): string => (props.isCollapsed ? "max-width: 1px; min-width: 1px;" : "")}
 `;
 
 const SidebarContent = styled.div`
@@ -49,6 +48,7 @@ const Logo = styled.div`
   padding: 5px;
   margin-bottom: 5px;
   text-align: center;
+
   @media (max-width: ${screenSizes.tabletScreenSize}px) {
     font-size: 1.75em;
     padding-top: 50px;
@@ -127,9 +127,7 @@ const Sidebar: FC = () => {
             {!isCollapsed && (
               <>
                 <Logo>
-                  <Gradient type="text">
-                    <h1>REDDIT</h1>
-                  </Gradient>
+                  <h1>REDDIT</h1>
                   <h1>RAVEN</h1>
                 </Logo>
                 <PageButton title={"Post"} icon={"bx bxs-dashboard"} url={"/"} />

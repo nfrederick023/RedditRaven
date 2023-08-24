@@ -8,7 +8,7 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
-          <link rel="icon" href="/images/favicon.ico" />
+          <link rel="icon" href="/images/favicon.png" />
           <link
             rel="stylesheet"
             href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900"
@@ -33,10 +33,7 @@ class MyDocument extends Document {
             crossOrigin="anonymous"
             referrerPolicy="no-referrer"
           />
-          <link
-            href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
-            rel="stylesheet"
-          />
+          <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
         </Head>
         <body>
           <Main />
