@@ -12,7 +12,7 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
     return;
   }
 
-  if (req.method !== "POST" && req.method !== "DELETE" && req.method !== "PUT") {
+  if (req.method !== "POST" && req.method !== "DELETE" && req.method !== "PUT" && req.method !== "PATCH") {
     res.status(405).json({ message: "Method not allowed" });
     return;
   }
@@ -53,6 +53,43 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
     setSubredditsList(subredditList);
     res.status(200).send(subredditList);
     return;
+  }
+
+  if (req.method === "PATCH") {
+    const name: string | undefined = JSON.parse(req.body)?.name;
+    if (!name) {
+      res.status(400).json({ message: "No subreddit name was provided." });
+      return;
+    }
+
+    const subredditList = await getSubredditsList();
+    const subredditToUpdate = subredditList.find(subreddit => subreddit.name === name);
+
+    if (!subredditToUpdate) {
+      res.status(400).json({ message: "No matching subreddit was found." });
+      return;
+    } else {
+
+      const [flairs, about] = await Promise.all([getFlairsBySubbreddit(name), getSubbredditAbout(name)]);
+
+      const updatedSubreddit: Subreddit = {
+        ...subredditToUpdate,
+        info: { flairs, ...about },
+      };
+
+      const newList = subredditList.map(subreddit => {
+        if (subreddit.name === updatedSubreddit.name) {
+          return updatedSubreddit;
+        } else {
+          return subreddit;
+        }
+      }
+      );
+
+      setSubredditsList(newList);
+      res.status(200).send(newList);
+      return;
+    }
   }
 
   if (req.method === "DELETE") {

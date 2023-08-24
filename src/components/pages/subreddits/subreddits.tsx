@@ -131,6 +131,14 @@ const addSubreddit = async (name: string): Promise<Response> => {
   return response;
 };
 
+const indexSubreddit = async (name: string): Promise<Response> => {
+  const response = await fetch("/api/subreddits", {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+  return response;
+};
+
 const removeSubreddit = async (name: string): Promise<Response> => {
   const response = await fetch("/api/subreddits", {
     method: "DELETE",
@@ -370,6 +378,20 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
     }
   };
 
+  const handleReIndex = async (): Promise<void> => {
+    const userIndexConfirmation = !confirm("This will remove any unsaved changes. Are you sure you want to continue?");
+    if (userIndexConfirmation) return;
+
+    if (typeof selectedIndex !== "undefined") {
+      const selectedSubreddit = subredditList[selectedIndex];
+      const res = await indexSubreddit(selectedSubreddit.name);
+      if (res.ok) {
+        const newList = await res.json();
+        setSubredditList([...newList]);
+      }
+    }
+  };
+
   const handleResetSelected = (): void => {
     if (typeof selectedIndex !== "undefined") {
       const newSubredditList = [...subredditList];
@@ -500,6 +522,9 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
                 .toString()}
             </Ellipsis>
           </FlexWrapper>
+          <ButtonBase>
+            <Button onClick={handleReIndex}>Re-Index Subreddit</Button>
+          </ButtonBase>
           <EditHeader>DEFAULTS</EditHeader>
           <FlexWrapper>
             <InputText>

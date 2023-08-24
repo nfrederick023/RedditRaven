@@ -18,7 +18,7 @@ const ButtonWrapper = styled.div`
   }
 
   > span {
-    border-radius: 12px;
+    border-radius: 4px;
     height: 34px;
     align-items: center;
     display: flex;
@@ -43,11 +43,7 @@ interface PageButtonProps {
   url: string;
 }
 
-const PageButton: FC<PageButtonProps> = ({
-  title,
-  icon,
-  url,
-}: PageButtonProps) => {
+const PageButton: FC<PageButtonProps> = ({ title, icon, url }: PageButtonProps) => {
   const isSelected = window.location.pathname === url;
   const router = useRouter();
   const navigateToPage = (): void => {

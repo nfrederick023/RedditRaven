@@ -1,4 +1,4 @@
-import { ClassicPost, ClassicPostTemplate, PixivDetails, Subreddit, Tags } from "@client/utils/types";
+import { ClassicPost, ClassicPostTemplate, PixivDetails, SubmissionErrors, Subreddit, Tags } from "@client/utils/types";
 import { FileUpload } from "@client/components/common/shared/file-upload";
 import Gradient from "@client/components/common/shared/gradient";
 import React, { FC, useEffect, useState } from "react";
@@ -451,7 +451,7 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
     setDisplayPixivTags(!displayPixivTags);
   };
 
-  const createPost = (): void => {
+  const createPost = async (): Promise<void> => {
     // check all required fields
     for (const postTemplate of postTemplates) {
       if (!postTemplate.title) {
@@ -489,17 +489,22 @@ const ClassicPage: FC<ClassicPageProps> = ({ subreddits }: ClassicPageProps) => 
       comment: _comment,
     };
 
-    createRedditPost(post);
+    const res = await createRedditPost(post);
 
-    if (clearOnPost) {
-      setPostTemplates([]);
-      setPixivDetails(undefined);
-      setPaginatedResults([]);
-      setGlobalTitle("");
-      setGlobalTags([]);
-      setComment("");
-      setLink("");
-      setImageUrl("");
+    if (res.ok) {
+      if (clearOnPost) {
+        setPostTemplates([]);
+        setPixivDetails(undefined);
+        setPaginatedResults([]);
+        setGlobalTitle("");
+        setGlobalTags([]);
+        setComment("");
+        setLink("");
+        setImageUrl("");
+      }
+    } else {
+      const errors = (await res.json()) as SubmissionErrors[];
+      alert("ERROR: One or more posts failed!\nSubreddits: " + errors.map((error) => error.subredditName).toString());
     }
   };
 
