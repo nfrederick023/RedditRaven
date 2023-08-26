@@ -108,7 +108,6 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
       const selectedSubreddit = subreddits.find(subreddit => subreddit.name === multipost);
 
       if (selectedSubreddit) {
-        await generatePost(selectedSubreddit, selectedSubreddit.defaults.flair);
         queuedPosts.push(generatePost(post.subreddit, post.flair));
       }
     }
