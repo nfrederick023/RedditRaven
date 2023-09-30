@@ -125,6 +125,15 @@ export interface SubmitResponse {
   }
 }
 
+export interface ResubmitResponse {
+  json: {
+    errors: string[],
+    data: {
+      websocket_url: string,
+    }
+  }
+}
+
 export interface SubmitRequest {
   title: string;
   sr: string;

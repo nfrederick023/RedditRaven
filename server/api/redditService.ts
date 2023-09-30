@@ -1,4 +1,4 @@
-import { CommentRequest, SubmitRequest, SubmitResponse, SubredditAbout, SubredditFlair } from "@client/utils/types";
+import { CommentRequest, ResubmitResponse, SubmitRequest, SubmitResponse, SubredditAbout, SubredditFlair } from "@client/utils/types";
 import { getCredentials } from "@server/utils/config";
 import { loadImage } from "./getPixivDetails";
 import FormData from "form-data";
@@ -182,10 +182,15 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 
     const WebSocketClient = new WebSocket.client;
     const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
-    const websocket_url = "wss://k8s-lb.wss.redditmedia.com" + uploadLease.asset.websocket_url.split(".wss.redditmedia.com").pop();
+
+    postRequest.url = uploadedImageLink;
+
+    const res = await redditClient().post<ResubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    const websocket_url = res.json.data.websocket_url;
 
     // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
     WebSocketClient.connect(websocket_url);
+
     const getConnection = (): Promise<WebSocket.connection> => {
       return new Promise(function (resolve,) {
         WebSocketClient.on("connect", connection => {
@@ -210,10 +215,9 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       });
     };
 
-    postRequest.url = uploadedImageLink;
 
-    // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
-    await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    // // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
+    // await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
 
     // get the post link from the websocket
     const postLink = await getURL(connection);
