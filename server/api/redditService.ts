@@ -126,6 +126,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 
   if (postRequest.url) {
     const imageResponse = await loadImage(postRequest.url);
+
     // await new Promise(resolve => setTimeout(resolve, 15000));
 
     const mimetype = imageResponse.headers.get("content-type") ?? "";
@@ -136,15 +137,14 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       mimetype
     };
 
-    const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
-    //await new Promise(resolve => setTimeout(resolve, 15000));
+    const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json?raw_json=1&gilding_detail=1", uploadImageRequest);
+    await new Promise(resolve => setTimeout(resolve, 15000));
     const uploadURL = "https:" + uploadLease.args.action;
     const formdata = new FormData();
 
     const getItemByName = (name: FieldName): UploadResponseField | undefined => {
       return uploadLease.args.fields.find(item => item.name === name) ?? undefined;
     };
-
     const items: FieldName[] = ["acl", "Content-Type", "key", "policy", "success_action_status", "x-amz-algorithm", "x-amz-credential", "x-amz-date", "x-amz-security-token", "x-amz-signature", "x-amz-storage-class", "x-amz-meta-ext", "bucket"];
     //const items: FieldName[] = ["key", "x-amz-algorithm", "x-amz-date", "x-amz-storage-class", "success_action_status", "bucket", "acl", "x-amz-signature", "x-amz-security-token", "x-amz-meta-ext", "policy", "x-amz-credential", "Content-Type"];
 
@@ -163,7 +163,6 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     allLeaseItems.forEach(item => formdata.append(item.name, item.value));
     formdata.append("file", imageData);
 
-
     // FUCK NODE FETCH!!
     // FUCK NODE FETCH!!
     // FUCK NODE FETCH!!
@@ -181,11 +180,13 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       headers: formdata.getHeaders(),
     });
 
-
     const WebSocketClient = new WebSocket.client;
     const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
-    const websocket_url = uploadLease.asset.websocket_url;
+    const websocket_url = "wss://k8s-lb.wss.redditmedia.com" + uploadLease.asset.websocket_url.split(".wss.redditmedia.com").pop();
+    console.log(uploadLease);
+
     // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
+    console.log(websocket_url);
     WebSocketClient.connect(websocket_url);
     const getConnection = (): Promise<WebSocket.connection> => {
       return new Promise(function (resolve,) {
@@ -196,6 +197,8 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     };
 
     const connection = await getConnection();
+
+    console.log("next step");
 
     const getURL = (connection: WebSocket.connection): Promise<string> => {
       return new Promise(function (resolve, reject) {
@@ -212,6 +215,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     };
 
     postRequest.url = uploadedImageLink;
+    console.log("uploading to reddit");
 
     // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
     await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
