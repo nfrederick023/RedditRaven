@@ -183,10 +183,8 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     const WebSocketClient = new WebSocket.client;
     const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
     const websocket_url = "wss://k8s-lb.wss.redditmedia.com" + uploadLease.asset.websocket_url.split(".wss.redditmedia.com").pop();
-    console.log(uploadLease);
 
     // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
-    console.log(websocket_url);
     WebSocketClient.connect(websocket_url);
     const getConnection = (): Promise<WebSocket.connection> => {
       return new Promise(function (resolve,) {
@@ -197,8 +195,6 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     };
 
     const connection = await getConnection();
-
-    console.log("next step");
 
     const getURL = (connection: WebSocket.connection): Promise<string> => {
       return new Promise(function (resolve, reject) {
@@ -215,7 +211,6 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     };
 
     postRequest.url = uploadedImageLink;
-    console.log("uploading to reddit");
 
     // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
     await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
