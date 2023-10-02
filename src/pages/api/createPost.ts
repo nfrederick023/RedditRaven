@@ -1,7 +1,6 @@
 import { CommentRequest, Post, SubmissionErrors, SubmitRequest, Subreddit, SubredditFlair } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
 import { checkHashedPassword } from "@server/utils/auth";
-import { getImageURL } from "@server/api/getPixivDetails";
 import { getSubredditsList, setSubredditsList } from "@server/utils/config";
 import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
 
@@ -49,49 +48,45 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
     if (post.selectedImage) {
 
-      const link = await getImageURL(post.selectedImage.smallImageLink, post.selectedImage.pixivID, post.selectedImage.frame) ?? "";
+      const postRequest: SubmitRequest = {
+        title: post.title,
+        url: post.selectedImage.imageLink,
+        api_type: "json",
+        sr: subreddit.name,
+        submit_type: "subreddit",
+        nsfw: post.isNSFW,
+        flair_id: flair?.id,
+        kind: "image",
+        sendreplies: true,
+        validate_on_submit: true,
+        original_content: false,
+        post_to_twitter: false,
+        spoiler: false
+      };
 
-      if (link) {
-        const postRequest: SubmitRequest = {
-          title: post.title,
-          url: link,
-          api_type: "json",
-          sr: subreddit.name,
-          submit_type: "subreddit",
-          nsfw: post.isNSFW,
-          flair_id: flair?.id,
-          kind: "image",
-          sendreplies: true,
-          validate_on_submit: true,
-          original_content: false,
-          post_to_twitter: false,
-          spoiler: false
-        };
+      const imagePostResponse = await submitImagePost(postRequest);
 
-        const imagePostResponse = await submitImagePost(postRequest);
+      const commentReqeust: CommentRequest = {
+        text: post.comment,
+        thing_id: imagePostResponse,
+      };
 
-        const commentReqeust: CommentRequest = {
-          text: post.comment,
-          thing_id: imagePostResponse,
-        };
+      if (post.comment) {
+        await submitComment(commentReqeust);
+      }
 
+      delete postRequest.url;
+      delete postRequest.flair_id;
+      postRequest.kind = "crosspost";
+      postRequest.crosspost_fullname = imagePostResponse;
+
+      for (const crosspost of post.crossposts) {
+        postRequest.sr = crosspost.name;
+        postRequest.flair_id = crosspost.defaults.flair?.id;
+        const postResponse = await submitPost(postRequest);
+        commentReqeust.thing_id = postResponse.json.data.name;
         if (post.comment) {
           await submitComment(commentReqeust);
-        }
-
-        delete postRequest.url;
-        delete postRequest.flair_id;
-        postRequest.kind = "crosspost";
-        postRequest.crosspost_fullname = imagePostResponse;
-
-        for (const crosspost of post.crossposts) {
-          postRequest.sr = crosspost.name;
-          postRequest.flair_id = crosspost.defaults.flair?.id;
-          const postResponse = await submitPost(postRequest);
-          commentReqeust.thing_id = postResponse.json.data.name;
-          if (post.comment) {
-            await submitComment(commentReqeust);
-          }
         }
       }
     }

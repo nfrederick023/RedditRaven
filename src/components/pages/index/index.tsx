@@ -617,9 +617,13 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
     for (const res of responses) {
       if (!res.ok) {
-        const json = (await res.json()) as { errors: SubmissionErrors[] };
-
-        if (json.errors) {
+        let json: { errors: SubmissionErrors[] } | undefined;
+        try {
+          json = await res.json();
+        } catch (e) {
+          //
+        }
+        if (json && json.errors) {
           failedPosts.push(...json.errors);
         } else {
           isUnknownInternalServerError = true;

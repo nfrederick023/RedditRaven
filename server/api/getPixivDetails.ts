@@ -1,7 +1,7 @@
 import * as https from "https";
 import { PixivDetails, PixivTag, SuggestedImages } from "@client/utils/types";
-import { Response } from "node-fetch";
-import fetch from "node-fetch";
+import { getCredentials } from "@server/utils/config";
+import axios, { AxiosResponse } from "axios";
 
 interface PixivImageTags {
   tag: string;
@@ -38,6 +38,13 @@ interface ExpandedIllustrationDetails extends IllustrationDetails {
   userIllusts: {
     [key: string]: IllustrationDetails;
   };
+  urls: {
+    mini: string;
+    thumb: string;
+    small: string;
+    regular: string;
+    original: string;
+  }
   width: number;
   height: number;
   pageCount: number;
@@ -105,13 +112,12 @@ export interface PixivIllustDetails {
 
 const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
   try {
-    const response = await fetch("https://www.pixiv.net/ajax/illust/" + pixivID, {
+    const response = await axios("https://www.pixiv.net/ajax/illust/" + pixivID, {
       method: "GET",
-      signal: AbortSignal.timeout(120000)
     });
 
-    if (response.ok)
-      return await response.json() as PixivIllustDetails;
+    if (response.status === 200)
+      return response.data as PixivIllustDetails;
   } catch (e) {
     // eslint-disable-next-line no-console
     console.warn("Failed to get images: " + pixivID);
@@ -119,64 +125,25 @@ const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails 
   }
 };
 
-export const loadImage = async (url: string): Promise<Response> => {
-  const agent = new https.Agent({
-    rejectUnauthorized: false,
-  });
-
+export const loadImage = async (url: string): Promise<AxiosResponse> => {
   // get the image data from pixiv
-  return await fetch(
+  return await axios.get(
     url,
     {
-      method: "GET",
-      agent,
-      referrer: "https://www.pixiv.net/",
+      responseType: "arraybuffer",
+      headers: {
+        referer: "https://www.pixiv.net/",
+      }
     }
   );
-};
-
-export const getImageURL = async (baseURL: string, pixivID: string, frame: string): Promise<string | undefined> => {
-  const ext = baseURL.split(".").pop();
-
-  let imageLink = "";
-  if (baseURL.includes("img-master"))
-    imageLink = "https://i.pximg.net/img-original" + baseURL.split("img-master")[1].split(pixivID)[0] + pixivID + "_p" + frame + "." + ext;
-  else
-    imageLink = "https://i.pximg.net/img-original" + baseURL.split("custom-thumb")[1].split(pixivID)[0] + pixivID + "_p" + frame + "." + ext;
-
-  const agent = new https.Agent({
-    rejectUnauthorized: false,
-  });
-
-  try {
-    const checkJPG = await fetch(
-      imageLink,
-      {
-        method: "GET",
-        signal: AbortSignal.timeout(120000),
-        agent,
-        referrer: "https://www.pixiv.net/",
-      }
-    );
-
-    if (!checkJPG.ok) {
-      imageLink = imageLink.split(".jpg")[0] + ".png";
-    }
-    return imageLink;
-  } catch (e) {
-
-    // eslint-disable-next-line no-console
-    console.warn("Failed to get image URL!\n" + e);
-  }
 };
 
 export const getImageLink = async (pixivID: string, frame: string): Promise<PixivDetails | undefined> => {
 
   const res = await getIllustrationData(pixivID);
   if (res) {
-
-    const smallImageLink = res.body.userIllusts[pixivID].url;
-    const imageLink = await getImageURL(smallImageLink, pixivID, frame);
+    const smallImageLink = res.body.urls.thumb;
+    const imageLink = res.body.urls.original;
     const artist = res.body.userName;
     const artistID = res.body.userId;
     const artistLink = "https://www.pixiv.net/member.php?id=" + artistID;
@@ -207,14 +174,13 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
 };
 
 export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined> => {
-  const response = await fetch("https://www.pixiv.net/ajax/search/tags/" + tagName, {
+  const response = await axios("https://www.pixiv.net/ajax/search/tags/" + tagName, {
     method: "GET",
-    signal: AbortSignal.timeout(120000),
     headers: { "accept-language": "en-US" }
   });
 
-  if (response.ok) {
-    const res = await response.json() as PixivTagDetails;
+  if (response.status === 200) {
+    const res = response.data as PixivTagDetails;
     const translationEN = Object.values(res.body.tagTranslation)[0]?.en;
     const translationRomaji = Object.values(res.body.tagTranslation)[0]?.romaji;
     const enName = translationEN ? translationEN : translationRomaji ? translationRomaji : res.body.tag;
@@ -233,20 +199,19 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
   // change mode for R18, all, or all ages
   const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + page + "&s_mode=s_tag_full&lang=en&version=82d3db204a8e8b7e2f627b893751c3cc6ef300fb";
 
-  const response = await fetch(searchURL, {
+  const response = await axios(searchURL, {
     method: "GET",
     headers: { "accept-language": "en-US", cookie: `PHPSESSID=${token}`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" },
 
   });
 
-
-  if (response.ok) {
-    const res = await response.json() as PixivIllustSearch;
+  if (response.status === 200) {
+    const res = response.data as PixivIllustSearch;
     const unfilteredIllustations = await Promise.all(res.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
     const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
     const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 60).map(async image => {
       const res = await loadImage(image.smallImageLink);
-      image.imageBlob = Buffer.from(await res.arrayBuffer()).toString("base64");
+      image.imageBlob = Buffer.from(res.data).toString("base64");
       return image;
     }));
 

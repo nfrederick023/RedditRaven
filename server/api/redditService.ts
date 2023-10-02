@@ -129,7 +129,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 
     // await new Promise(resolve => setTimeout(resolve, 15000));
 
-    const mimetype = imageResponse.headers.get("content-type") ?? "";
+    const mimetype = imageResponse.headers["Content-Type"] as string ?? "";
     const filepath = postRequest.url.split("/").pop() || "";
 
     const uploadImageRequest = {
@@ -156,7 +156,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       }
     }
 
-    const imageData = Buffer.from(await (await imageResponse.blob()).arrayBuffer());
+    const imageData = Buffer.from(imageResponse.data);
 
     //const buffer = Buffer.from(await (blob).arrayBuffer());
     allLeaseItems.forEach(item => formdata.append(item.name, item.value));
