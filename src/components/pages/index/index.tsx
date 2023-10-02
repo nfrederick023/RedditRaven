@@ -298,19 +298,24 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     setPosts(newPosts);
     const postsWithImages: Post[] = [];
 
-    for (const post of newPosts) {
-      let suggestedImages: PixivDetails[] = [];
+    const queuedImages: Promise<void>[] = [];
 
-      if (post.pixivTag) {
-        suggestedImages = await retrieveSuggestedImages(post, post.subreddit.currentPage);
-        await new Promise((resolve) => setTimeout(resolve, 500));
+    for (let i = 0; i < newPosts.length; i++) {
+      const post = newPosts[i];
+
+      const getThing = async (): Promise<void> => {
+        post.suggestedImages = await retrieveSuggestedImages(post, post.subreddit.currentPage);
+        post.isLoading = false;
+        postsWithImages.push(post);
+      };
+
+      queuedImages.push(getThing());
+
+      if (i % 15 === 0 && i !== 0) {
+        await Promise.all(queuedImages);
       }
-
-      post.suggestedImages = suggestedImages;
-      post.isLoading = false;
-      postsWithImages.push(post);
     }
-
+    await Promise.all(queuedImages);
     setPosts(postsWithImages);
   };
 
@@ -596,22 +601,22 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         return;
       }
 
-      if (!post.flair && post.subreddit.info.flairs.length) {
-        const notAllFlairsSelectedConfirmation = !confirm(
-          "Not all flairs are selected. Are you sure you wish to continue?"
-        );
-        if (notAllFlairsSelectedConfirmation) return;
-      }
+      // if (!post.flair && post.subreddit.info.flairs.length) {
+      //   const notAllFlairsSelectedConfirmation = !confirm(
+      //     "Not all flairs are selected. Are you sure you wish to continue?"
+      //   );
+      //   if (notAllFlairsSelectedConfirmation) return;
+      // }
     }
 
-    const responses: Response[] = [];
+    const queuedResponses: Promise<Response>[] = [];
 
     for (const compiledPost of compiledPosts) {
       await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      responses.push(await createRedditPost(compiledPost));
+      queuedResponses.push(createRedditPost(compiledPost));
     }
 
+    const responses: Response[] = await Promise.all(queuedResponses);
     const failedPosts: SubmissionErrors[] = [];
     let isUnknownInternalServerError = false;
 

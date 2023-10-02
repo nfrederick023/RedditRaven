@@ -37,7 +37,7 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
   const pixivDetails = await getImageLink(pixivID, frame);
   if (pixivDetails) {
     const loadedImage = await loadImage(pixivDetails.smallImageLink);
-    pixivDetails.imageBlob = Buffer.from(await loadedImage.arrayBuffer()).toString("base64");
+    pixivDetails.imageBlob = Buffer.from(loadedImage.data).toString("base64");
   }
   res.status(200).send(pixivDetails);
   return;

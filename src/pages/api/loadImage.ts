@@ -22,16 +22,13 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     return;
   }
 
-  const response = await loadImage(link);
-
-  if (response.ok) {
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    res.send(Buffer.from(arrayBuffer));
+  try {
+    const response = await loadImage(link);
+    res.send(Buffer.from(response.data));
     return;
+  } catch (e) {
+    res.status(500).json({ message: "Could not find an image." });
   }
-
-  res.status(500).json({ message: "Could not find an image. Error code from Pixiv: " + response.status });
 };
 
 export default sourceLink;

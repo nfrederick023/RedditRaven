@@ -1,7 +1,19 @@
-import * as https from "https";
+
 import { PixivDetails, PixivTag, SuggestedImages } from "@client/utils/types";
-import { getCredentials } from "@server/utils/config";
 import axios, { AxiosResponse } from "axios";
+
+import * as http from "http";
+import * as https from "https";
+
+import CacheableLookup from "cacheable-lookup";
+
+if (process.env.HAS_LOADED !== "true") {
+  const cacheable = new CacheableLookup();
+
+  cacheable.install(http.globalAgent);
+  cacheable.install(https.globalAgent);
+  process.env.HAS_LOADED = "true";
+}
 
 interface PixivImageTags {
   tag: string;
@@ -110,6 +122,7 @@ export interface PixivIllustDetails {
   body: ExpandedIllustrationDetails;
 }
 
+
 const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
   try {
     const response = await axios("https://www.pixiv.net/ajax/illust/" + pixivID, {
@@ -202,7 +215,6 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
   const response = await axios(searchURL, {
     method: "GET",
     headers: { "accept-language": "en-US", cookie: `PHPSESSID=${token}`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" },
-
   });
 
   if (response.status === 200) {

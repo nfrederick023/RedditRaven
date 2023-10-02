@@ -81,6 +81,19 @@ export interface PixivDetails {
   tags: string[];
 }
 
+export interface LimitedPixivDetails {
+  smallImageLink: string;
+  pixivLink: string;
+  artist: string;
+  artistID: string;
+  pixivID: string;
+  likeCount: number;
+  bookmarkCount: number;
+  title: string;
+  imageBlob?: string;
+  tags: string[];
+}
+
 export interface Post {
   subreddit: Subreddit;
   selectedImage: PixivDetails | undefined;
