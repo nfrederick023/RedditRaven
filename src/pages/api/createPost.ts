@@ -26,110 +26,100 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
     return;
   }
 
-  const body: { posts: Post[] } = JSON.parse(req.body) as { posts: Post[] };
-  const posts = body.posts;
+  const post: Post = JSON.parse(req.body) as Post;
 
-  if (!posts) {
+  if (!post) {
     res.status(400).json({ message: "Could not validate request!" });
     return;
   }
 
-  let eightKBString = "";
-  for (let i = 0; i < 1024 * 8; i++) {
-    eightKBString += "\n";
-  }
-
   const subreddits = await getSubredditsList();
-  const errors: SubmissionErrors[] = [];
-  const queuedPosts: Promise<void>[] = [];
-
-  for (const post of posts) {
-    const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
-      if (post.selectedImage) {
-        const link = await getImageURL(post.selectedImage.smallImageLink, post.selectedImage.pixivID, post.selectedImage.frame);
-        if (link) {
-          const postRequest: SubmitRequest = {
-            title: post.title,
-            url: link,
-            api_type: "json",
-            sr: subreddit.name,
-            submit_type: "subreddit",
-            nsfw: post.isNSFW,
-            flair_id: flair?.id,
-            kind: "image",
-            sendreplies: true,
-            validate_on_submit: true,
-            original_content: false,
-            post_to_twitter: false,
-            spoiler: false
-          };
-
-          try {
-            const imagePostResponse = await submitImagePost(postRequest);
-            const commentReqeust: CommentRequest = {
-              text: post.comment,
-              thing_id: imagePostResponse,
-            };
-
-            if (post.comment) {
-              await submitComment(commentReqeust);
-            }
-
-            delete postRequest.url;
-            delete postRequest.flair_id;
-            postRequest.kind = "crosspost";
-            postRequest.crosspost_fullname = imagePostResponse;
-
-            for (const crosspost of post.crossposts) {
-              postRequest.sr = crosspost.name;
-              postRequest.flair_id = crosspost.defaults.flair?.id;
-              const postResponse = await submitPost(postRequest);
-              commentReqeust.thing_id = postResponse.json.data.name;
-              if (post.comment) {
-                await submitComment(commentReqeust);
-              }
-            }
-          } catch (e) {
-            errors.push({ subredditName: post.subreddit.name, error: e });
-          }
-
-          // this is needed because cloudflare sucks dick
-          // https://github.com/marcialpaulg/Fixing-Cloudflare-Error-524
-          res.write(eightKBString);
-        } else {
-          // eslint-disable-next-line no-console
-          console.warn("Failed to create post. No link retrieved!\nSubreddit:" + post.subreddit.name);
-        }
-      }
-    };
-    queuedPosts.push(generatePost(post.subreddit, post.flair));
-
-    for (const multipost of post.multipost) {
-      const selectedSubreddit = subreddits.find(subreddit => subreddit.name === multipost);
-
-      if (selectedSubreddit) {
-        queuedPosts.push(generatePost(selectedSubreddit, selectedSubreddit.defaults.flair));
-      }
-    }
-  }
-
-  await Promise.all(queuedPosts);
 
   subreddits.map(subreddit => {
-    const matchingPost = posts.find(post => post.subreddit.name === subreddit.name);
-    if (matchingPost) {
-      subreddit.currentPage = Number(matchingPost.subreddit.currentPage) + "";
+    if (post.subreddit.name === subreddit.name) {
+      subreddit.currentPage = Number(post.subreddit.currentPage) + "";
     }
     return subreddit;
   });
 
   setSubredditsList(subreddits);
 
+  const errors: SubmissionErrors[] = [];
+
+  const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
+    if (post.selectedImage) {
+
+      const link = await getImageURL(post.selectedImage.smallImageLink, post.selectedImage.pixivID, post.selectedImage.frame) ?? "";
+
+      if (link) {
+        const postRequest: SubmitRequest = {
+          title: post.title,
+          url: link,
+          api_type: "json",
+          sr: subreddit.name,
+          submit_type: "subreddit",
+          nsfw: post.isNSFW,
+          flair_id: flair?.id,
+          kind: "image",
+          sendreplies: true,
+          validate_on_submit: true,
+          original_content: false,
+          post_to_twitter: false,
+          spoiler: false
+        };
+
+        const imagePostResponse = await submitImagePost(postRequest);
+
+        const commentReqeust: CommentRequest = {
+          text: post.comment,
+          thing_id: imagePostResponse,
+        };
+
+        if (post.comment) {
+          await submitComment(commentReqeust);
+        }
+
+        delete postRequest.url;
+        delete postRequest.flair_id;
+        postRequest.kind = "crosspost";
+        postRequest.crosspost_fullname = imagePostResponse;
+
+        for (const crosspost of post.crossposts) {
+          postRequest.sr = crosspost.name;
+          postRequest.flair_id = crosspost.defaults.flair?.id;
+          const postResponse = await submitPost(postRequest);
+          commentReqeust.thing_id = postResponse.json.data.name;
+          if (post.comment) {
+            await submitComment(commentReqeust);
+          }
+        }
+      }
+    }
+  };
+
+  try {
+    await generatePost(post.subreddit, post.flair);
+  } catch (e) {
+    errors.push({ subredditName: post.subreddit.name, error: e });
+  }
+
+  for (const multipost of post.multipost) {
+    const selectedSubreddit = subreddits.find(subreddit => subreddit.name === multipost);
+
+    if (selectedSubreddit) {
+      try {
+        await generatePost(selectedSubreddit, selectedSubreddit.defaults.flair);
+      } catch (e) {
+        errors.push({ subredditName: selectedSubreddit.name, error: e });
+      }
+    }
+  }
+
   if (errors.length) {
-    res.write(JSON.stringify(errors));
-    res.status(400);
+    res.statusCode = 500;
+    res.json({ errors });
   } else {
-    res.status(201);
+    res.statusCode = 201;
   }
 
   res.end();

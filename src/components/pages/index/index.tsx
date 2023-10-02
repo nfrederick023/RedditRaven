@@ -58,6 +58,7 @@ const Icon = styled.div`
 const ImagePreviewWrapper = styled.div`
   display: flex;
   margin-bottom: 15px;
+  height: 500px;
   justify-content: center;
 `;
 
@@ -146,6 +147,12 @@ const ButtonBase = styled.div`
   margin: 8px 5px 0px 0px;
 `;
 
+const CreateSpinner = styled.div`
+  div {
+    margin: auto;
+  }
+`;
+
 const CreditButtons = styled(ButtonBase)``;
 
 const GreyText = styled.div`
@@ -214,8 +221,8 @@ const Spinner = styled.div`
 `;
 
 const SpinnerBox = styled.div`
-  width: 450px;
-  height: 450px;
+  width: 100%;
+  height: 562px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -246,10 +253,10 @@ const getLink = async (link: string): Promise<PixivDetails | undefined> => {
   }
 };
 
-const createRedditPost = async (posts: Post[]): Promise<Response> => {
+const createRedditPost = async (post: Post): Promise<Response> => {
   const response = await fetch("/api/createPost", {
     method: "POST",
-    body: JSON.stringify({ posts }),
+    body: JSON.stringify(post),
   });
   return response;
 };
@@ -262,6 +269,7 @@ interface IndexPageProps {
 const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isPosting, setIsPosting] = useState(false);
   const [token, setToken] = useState("");
   const isInitialMount = useRef(true);
 
@@ -295,6 +303,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
       if (post.pixivTag) {
         suggestedImages = await retrieveSuggestedImages(post, post.subreddit.currentPage);
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       post.suggestedImages = suggestedImages;
@@ -412,6 +421,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         posts.map((post) => {
           if (post.subreddit.name === postToUpdate.subreddit.name) {
             post.customLink = newLink;
+            post.isLoading = true;
           }
           return post;
         })
@@ -441,12 +451,22 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
               post.selectedImage = pixivDetails;
               post.suggestedImages = [pixivDetails];
               post.title = title;
+              post.isLoading = false;
             }
             return post;
           })
         );
       } else {
-        alert("Failed to get Pixiv Details!");
+        setPosts(
+          posts.map((post) => {
+            if (post.subreddit.name === postToUpdate.subreddit.name) {
+              post.selectedImage = undefined;
+              post.suggestedImages = [];
+              post.isLoading = false;
+            }
+            return post;
+          })
+        );
       }
     };
   };
@@ -554,6 +574,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const createPost = async (): Promise<void> => {
+    setIsPosting(true);
+
     const compiledPosts: Post[] = [];
     posts.forEach((post) => {
       if (post.selectedImage) {
@@ -582,26 +604,42 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       }
     }
 
-    const res = await createRedditPost(compiledPosts);
+    const responses: Response[] = [];
 
-    if (res.ok) {
-      const resText = (await res.text()).trim();
+    for (const compiledPost of compiledPosts) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      if (resText.length) {
-        try {
-          const errors = JSON.parse(resText) as SubmissionErrors[];
-          alert(
-            "ERROR: One or more posts failed!\nSubreddits: " + errors.map((error) => error.subredditName).toString()
-          );
-        } catch (e) {
-          alert("ERROR: One or more posts failed!\nSubreddits: " + resText);
-        }
-      } else {
-        alert("Success!");
-      }
-    } else {
-      alert("Request Failed!");
+      responses.push(await createRedditPost(compiledPost));
     }
+
+    const failedPosts: SubmissionErrors[] = [];
+    let isUnknownInternalServerError = false;
+
+    for (const res of responses) {
+      if (!res.ok) {
+        const json = (await res.json()) as { errors: SubmissionErrors[] };
+
+        if (json.errors) {
+          failedPosts.push(...json.errors);
+        } else {
+          isUnknownInternalServerError = true;
+        }
+      }
+    }
+
+    if (failedPosts.length === 0) {
+      alert("Success!");
+    } else {
+      alert("One or More Posts Failed! See Console Logs for Details.");
+      // eslint-disable-next-line no-console
+      console.error(failedPosts);
+    }
+
+    if (isUnknownInternalServerError) {
+      alert("Some unknown internal server error has occured!");
+    }
+
+    setIsPosting(false);
   };
 
   useEffect(() => {
@@ -619,184 +657,215 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       <h1>POST</h1>
       <DashboardContent>
         <hr />
-        <DetailsWrapperBottom>
-          <TextField onChange={handlePixivTokenChange} value={token} placeholder="Pixiv Token" />
-          <Button onClick={handleTokenSubmit}>Submit</Button>
-        </DetailsWrapperBottom>
-        <SubredditsSearch
-          paginatedResults={paginatedResults}
-          setPaginatedResults={setPaginatedResults}
-          subreddits={subreddits}
-          resultsPerPageOptions={resultsPerPageOptions}
-          intialResultsPerPage={resultsPerPageOptions[1]}
-          showAll
-          hideWithouCategory
-        />
-        {posts.length ? (
+        {!isPosting ? (
           <>
-            {posts.map((post, i) => {
-              return (
-                <div key={i}>
-                  <div>
-                    <hr />
-                    <DetailsWrapper>
-                      <DetailsSubreddit>
-                        <h4>Subreddit</h4>
-                      </DetailsSubreddit>
-                      <DetailsPixivTag>
-                        <h4>Pixiv Tag</h4>
-                      </DetailsPixivTag>
-                      <DetailsLink>
-                        <h4>Multi-Post</h4>
-                      </DetailsLink>
-                    </DetailsWrapper>
-                    <DetailsWrapperBottom>
-                      <DetailsSubreddit>
-                        <a href={"https://www.reddit.com" + post.subreddit.info.url} target="_blank" rel="noreferrer">
-                          {post.subreddit.name}
-                        </a>
-                      </DetailsSubreddit>
-                      <DetailsPixivTag>
-                        <Select
-                          options={post.subreddit.pivixTags.map((tag) => tag.enName)}
-                          onChange={handleTagChange(post)}
-                          value={post.pixivTag?.enName ?? ""}
-                        />
-                        <a
-                          href={post.pixivTag?.link + "/artworks?mode=safe&p=" + Number(post.subreddit.currentPage)}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <Icon className="bx bx-link-external" title="Open in New Tab" />
-                        </a>
-                      </DetailsPixivTag>
-                      <DetailsLink>
-                        <Select
-                          options={subredditOptions}
-                          onChange={handleSubredditChange(post)}
-                          value={post.multipost}
-                          isMulti
-                          isClearable
-                        />
-                      </DetailsLink>
-                    </DetailsWrapperBottom>
-                    <DetailsWrapperBottom>
-                      <Icon className="bx bx-chevron-left" onClick={decreaseSlice(post)} />
-                      <Icon className="bx bx-chevron-right" onClick={increaseSlice(post)} />
-                      <CurentPageWrapper>
-                        <TextField onChange={handleLinkChange(post)} value={post.customLink} placeholder="Link" />
-                      </CurentPageWrapper>
-                      <Icon className="bx bx-minus" onClick={minusPage(post)} title={post.subreddit.notes} />
-                      <TextField
-                        onChange={handlePageChange(post.subreddit)}
-                        value={post.subreddit.currentPage.toString()}
-                        placeholder="Title"
-                      />
-                      <Icon className="bx bx-plus" onClick={plusPage(post)} />
-                      <Icon className="bx bx-send" onClick={goToPage(post, post.subreddit.currentPage)} />
-                    </DetailsWrapperBottom>
-                    <ImagePreviewWrapper>
-                      {post.isLoading ? (
-                        <SpinnerBox>
-                          <Spinner />
-                        </SpinnerBox>
-                      ) : (
-                        <>
-                          {post.suggestedImages.slice(post.slice * 4, post.slice * 4 + 4).map((image, i) => {
-                            return (
-                              <ImageDetails key={i}>
-                                <ImagePreview
-                                  src={"data:image/png;base64, " + image.imageBlob}
-                                  onClick={handleImageChange(post, image)}
-                                  isSelected={post.selectedImage?.imageLink === image.imageLink}
-                                />
-                                <ImageLinksWrapper>
-                                  <ImageLinks>
-                                    <a href={image.pixivLink} target="_blank" rel="noreferrer">
-                                      Open in New Tab
-                                    </a>
-                                    <Icon
-                                      className="bx bx-link"
-                                      onClick={copyLink("https://www.pixiv.net/en/artworks/" + image.pixivID)}
-                                      title="Copy Link"
-                                    />
-                                  </ImageLinks>
-                                </ImageLinksWrapper>
-                              </ImageDetails>
-                            );
-                          })}
-                        </>
-                      )}
-                    </ImagePreviewWrapper>
-                    <DetailsWrapper>
-                      <DetailsTitle>
-                        <h4>Title</h4>
-                      </DetailsTitle>
-                      <DetailsFlair>
-                        <h4>Flair</h4>
-                      </DetailsFlair>
-                      <DetailsCrosspost>
-                        <h4>Crosspost</h4>
-                      </DetailsCrosspost>
-                      <DetailsR18>
-                        <h4>R18</h4>
-                      </DetailsR18>
-                      <DetailsComment>
-                        <h4>CC</h4>
-                      </DetailsComment>
-                    </DetailsWrapper>
-                    <DetailsWrapperBottom>
-                      <DetailsTitle>
-                        <TextField
-                          onChange={handleTitleChange(post.subreddit)}
-                          value={post.title}
-                          placeholder="Title"
-                        />
-                      </DetailsTitle>
-                      <DetailsFlair>
-                        {post.subreddit.info.flairs.length ? (
-                          <Select
-                            options={post.subreddit.info.flairs.map((flair) => flair.name)}
-                            value={post.flair?.name || ""}
-                            onChange={handleFlairChange(post.subreddit)}
-                            isClearable
-                          />
-                        ) : (
-                          <GreyText>No Flair</GreyText>
-                        )}
-                      </DetailsFlair>
-                      <DetailsCrosspost>
-                        <Select
-                          options={crossPostableSubs.map((sub) => sub.name)}
-                          onChange={handleCrosspostChange(post)}
-                          value={post.crossposts.map((crosspost) => crosspost.name)}
-                          isMulti
-                          isClearable
-                        />
-                      </DetailsCrosspost>
-                      <DetailsR18>
-                        <CheckboxLabel>
-                          <Checkbox type="checkbox" checked={post.isNSFW} onChange={handleNSFWChange(post.subreddit)} />
-                        </CheckboxLabel>
-                      </DetailsR18>
-                      <DetailsComment>
-                        <Icon className="bx bx-note" onClick={viewNote(post.subreddit)} title={post.subreddit.notes} />
-                      </DetailsComment>
-                    </DetailsWrapperBottom>
+            <DetailsWrapperBottom>
+              <TextField onChange={handlePixivTokenChange} value={token} placeholder="Pixiv Token" />
+              <Button onClick={handleTokenSubmit}>Submit</Button>
+            </DetailsWrapperBottom>
+            <SubredditsSearch
+              paginatedResults={paginatedResults}
+              setPaginatedResults={setPaginatedResults}
+              subreddits={subreddits}
+              resultsPerPageOptions={resultsPerPageOptions}
+              intialResultsPerPage={resultsPerPageOptions[1]}
+              showAll
+              hideWithouCategory
+            />
 
-                    {/* <div>comment</div> */}
-                  </div>
-                </div>
-              );
-            })}
+            {posts.length ? (
+              <>
+                {posts.map((post, i) => {
+                  return (
+                    <div key={i}>
+                      <div>
+                        <hr />
+                        <DetailsWrapper>
+                          <DetailsSubreddit>
+                            <h4>Subreddit</h4>
+                          </DetailsSubreddit>
+                          <DetailsPixivTag>
+                            <h4>Pixiv Tag</h4>
+                          </DetailsPixivTag>
+                          <DetailsLink>
+                            <h4>Multi-Post</h4>
+                          </DetailsLink>
+                        </DetailsWrapper>
+                        <DetailsWrapperBottom>
+                          <DetailsSubreddit>
+                            <a
+                              href={"https://www.reddit.com" + post.subreddit.info.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {post.subreddit.name}
+                            </a>
+                          </DetailsSubreddit>
+                          <DetailsPixivTag>
+                            <Select
+                              options={post.subreddit.pivixTags.map((tag) => tag.enName)}
+                              onChange={handleTagChange(post)}
+                              value={post.pixivTag?.enName ?? ""}
+                            />
+                            <a
+                              href={post.pixivTag?.link + "/artworks?mode=safe&p=" + Number(post.subreddit.currentPage)}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <Icon className="bx bx-link-external" title="Open in New Tab" />
+                            </a>
+                          </DetailsPixivTag>
+                          <DetailsLink>
+                            <Select
+                              options={subredditOptions}
+                              onChange={handleSubredditChange(post)}
+                              value={post.multipost}
+                              isMulti
+                              isClearable
+                            />
+                          </DetailsLink>
+                        </DetailsWrapperBottom>
+                        {post.isLoading ? (
+                          <SpinnerBox>
+                            <Spinner />
+                          </SpinnerBox>
+                        ) : (
+                          <>
+                            <DetailsWrapperBottom>
+                              <Icon className="bx bx-chevron-left" onClick={decreaseSlice(post)} />
+                              <Icon className="bx bx-chevron-right" onClick={increaseSlice(post)} />
+                              <CurentPageWrapper>
+                                <TextField
+                                  onChange={handleLinkChange(post)}
+                                  value={post.customLink}
+                                  placeholder="Link"
+                                />
+                              </CurentPageWrapper>
+                              <Icon className="bx bx-minus" onClick={minusPage(post)} title={post.subreddit.notes} />
+                              <TextField
+                                onChange={handlePageChange(post.subreddit)}
+                                value={post.subreddit.currentPage.toString()}
+                                placeholder="Title"
+                              />
+                              <Icon className="bx bx-plus" onClick={plusPage(post)} />
+                              <Icon className="bx bx-send" onClick={goToPage(post, post.subreddit.currentPage)} />
+                            </DetailsWrapperBottom>
+                            <ImagePreviewWrapper>
+                              {post.suggestedImages.slice(post.slice * 4, post.slice * 4 + 4).map((image, i) => {
+                                return (
+                                  <ImageDetails key={i}>
+                                    <ImagePreview
+                                      src={"data:image/png;base64, " + image.imageBlob}
+                                      onClick={handleImageChange(post, image)}
+                                      isSelected={post.selectedImage?.imageLink === image.imageLink}
+                                    />
+                                    <ImageLinksWrapper>
+                                      <ImageLinks>
+                                        <a href={image.pixivLink} target="_blank" rel="noreferrer">
+                                          Open in New Tab
+                                        </a>
+                                        <Icon
+                                          className="bx bx-link"
+                                          onClick={copyLink("https://www.pixiv.net/en/artworks/" + image.pixivID)}
+                                          title="Copy Link"
+                                        />
+                                      </ImageLinks>
+                                    </ImageLinksWrapper>
+                                  </ImageDetails>
+                                );
+                              })}
+                            </ImagePreviewWrapper>
+                          </>
+                        )}
+                        <DetailsWrapper>
+                          <DetailsTitle>
+                            <h4>Title</h4>
+                          </DetailsTitle>
+                          <DetailsFlair>
+                            <h4>Flair</h4>
+                          </DetailsFlair>
+                          <DetailsCrosspost>
+                            <h4>Crosspost</h4>
+                          </DetailsCrosspost>
+                          <DetailsR18>
+                            <h4>R18</h4>
+                          </DetailsR18>
+                          <DetailsComment>
+                            <h4>CC</h4>
+                          </DetailsComment>
+                        </DetailsWrapper>
+                        <DetailsWrapperBottom>
+                          <DetailsTitle>
+                            <TextField
+                              onChange={handleTitleChange(post.subreddit)}
+                              value={post.title}
+                              placeholder="Title"
+                            />
+                          </DetailsTitle>
+                          <DetailsFlair>
+                            {post.subreddit.info.flairs.length ? (
+                              <Select
+                                options={post.subreddit.info.flairs.map((flair) => flair.name)}
+                                value={post.flair?.name || ""}
+                                onChange={handleFlairChange(post.subreddit)}
+                                isClearable
+                              />
+                            ) : (
+                              <GreyText>No Flair</GreyText>
+                            )}
+                          </DetailsFlair>
+                          <DetailsCrosspost>
+                            <Select
+                              options={crossPostableSubs.map((sub) => sub.name)}
+                              onChange={handleCrosspostChange(post)}
+                              value={post.crossposts.map((crosspost) => crosspost.name)}
+                              isMulti
+                              isClearable
+                            />
+                          </DetailsCrosspost>
+                          <DetailsR18>
+                            <CheckboxLabel>
+                              <Checkbox
+                                type="checkbox"
+                                checked={post.isNSFW}
+                                onChange={handleNSFWChange(post.subreddit)}
+                              />
+                            </CheckboxLabel>
+                          </DetailsR18>
+                          <DetailsComment>
+                            <Icon
+                              className="bx bx-note"
+                              onClick={viewNote(post.subreddit)}
+                              title={post.subreddit.notes}
+                            />
+                          </DetailsComment>
+                        </DetailsWrapperBottom>
+
+                        {/* <div>comment</div> */}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            ) : (
+              <NoSearchResults>No Subreddits Found!</NoSearchResults>
+            )}
+            <hr />
+            {posts.find((post) => post.isLoading) ? (
+              <CreateSpinner>
+                <Spinner />
+              </CreateSpinner>
+            ) : (
+              <CreditButtons>
+                <Button onClick={createPost}>Create Posts</Button>
+              </CreditButtons>
+            )}
           </>
         ) : (
-          <NoSearchResults>No Subreddits Found!</NoSearchResults>
+          <SpinnerBox>
+            <Spinner />
+          </SpinnerBox>
         )}
-        <hr />
-        <CreditButtons>
-          <Button onClick={createPost}>Create Posts</Button>
-        </CreditButtons>
       </DashboardContent>
       <br />
       <br />

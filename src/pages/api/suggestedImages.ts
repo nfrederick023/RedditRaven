@@ -7,7 +7,6 @@ import { getPixivIllustrations } from "@server/api/getPixivDetails";
 const creds = getCredentials();
 
 const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
-
   if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
     res.statusCode = 401;
     res.end(JSON.stringify("Unauthorized"));

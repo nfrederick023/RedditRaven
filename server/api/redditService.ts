@@ -137,8 +137,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       mimetype
     };
 
-    const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json?raw_json=1&gilding_detail=1", uploadImageRequest);
-    await new Promise(resolve => setTimeout(resolve, 15000));
+    const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
     const uploadURL = "https:" + uploadLease.args.action;
     const formdata = new FormData();
 
@@ -214,7 +213,6 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
         });
       });
     };
-
 
     // // post the image to reddit, this will turn our uploaded image into an i.reddit upload, which is publicly accessible
     // await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", postRequest);
