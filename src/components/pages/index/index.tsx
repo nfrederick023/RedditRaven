@@ -7,6 +7,7 @@ import {
   SuggestedImages,
   SuggestedImagesReq,
 } from "@client/utils/types";
+import PromisePool from "async-promise-pool";
 import React, { FC, useEffect, useRef, useState } from "react";
 import Select from "@client/components/common/shared/select";
 import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
@@ -229,6 +230,8 @@ const SpinnerBox = styled.div`
   background-color: transparent;
 `;
 
+const pool = new PromisePool({ concurrency: 15 });
+
 const getSuggestedImages = async (suggestedImagesReq: SuggestedImagesReq): Promise<SuggestedImages | undefined> => {
   const response = await fetch("/api/suggestedImages", {
     method: "POST",
@@ -296,27 +299,24 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     });
 
     setPosts(newPosts);
-    const postsWithImages: Post[] = [];
 
-    const queuedImages: Promise<void>[] = [];
-
-    for (let i = 0; i < newPosts.length; i++) {
-      const post = newPosts[i];
-
-      const getThing = async (): Promise<void> => {
+    for (const post of newPosts) {
+      pool.add(async () => {
         post.suggestedImages = await retrieveSuggestedImages(post, post.subreddit.currentPage);
         post.isLoading = false;
-        postsWithImages.push(post);
-      };
-
-      queuedImages.push(getThing());
-
-      if (i % 15 === 0 && i !== 0) {
-        await Promise.all(queuedImages);
-      }
+        setPosts([
+          ...newPosts.map((_post) => {
+            if (_post.subreddit.name === post.subreddit.name) {
+              return post;
+            } else {
+              return _post;
+            }
+          }),
+        ]);
+      });
     }
-    await Promise.all(queuedImages);
-    setPosts(postsWithImages);
+
+    await pool.all();
   };
 
   const retrieveSuggestedImages = async (post: Post, page: string): Promise<PixivDetails[]> => {
@@ -666,22 +666,22 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       <h1>POST</h1>
       <DashboardContent>
         <hr />
+
+        <DetailsWrapperBottom>
+          <TextField onChange={handlePixivTokenChange} value={token} placeholder="Pixiv Token" />
+          <Button onClick={handleTokenSubmit}>Submit</Button>
+        </DetailsWrapperBottom>
+        <SubredditsSearch
+          paginatedResults={paginatedResults}
+          setPaginatedResults={setPaginatedResults}
+          subreddits={subreddits}
+          resultsPerPageOptions={resultsPerPageOptions}
+          intialResultsPerPage={resultsPerPageOptions[1]}
+          showAll
+          hideWithouCategory
+        />
         {!isPosting ? (
           <>
-            <DetailsWrapperBottom>
-              <TextField onChange={handlePixivTokenChange} value={token} placeholder="Pixiv Token" />
-              <Button onClick={handleTokenSubmit}>Submit</Button>
-            </DetailsWrapperBottom>
-            <SubredditsSearch
-              paginatedResults={paginatedResults}
-              setPaginatedResults={setPaginatedResults}
-              subreddits={subreddits}
-              resultsPerPageOptions={resultsPerPageOptions}
-              intialResultsPerPage={resultsPerPageOptions[1]}
-              showAll
-              hideWithouCategory
-            />
-
             {posts.length ? (
               <>
                 {posts.map((post, i) => {

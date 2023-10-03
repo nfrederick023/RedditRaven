@@ -15,113 +15,61 @@ if (process.env.HAS_LOADED !== "true") {
   process.env.HAS_LOADED = "true";
 }
 
-interface PixivImageTags {
-  tag: string;
-  locked: boolean;
-  deletable: boolean;
-  userId: string;
+interface LimitedIllustrationDetails {
   userName: string;
-}
-
-interface IllustrationDetails {
-  illustId: string;
-  illustTitle: string;
-  illustComment: string;
-  id: string;
-  title: string;
+  userId: string;
   description: string;
-  createDate: string;
-  uploadDate: string;
-  aiType: number;
-  url: string;
+  title: string;
+  bookmarkCount: number;
+  likeCount: number
   tags: {
     authorId: string;
     isLocked: boolean;
-    tags: PixivImageTags[];
+    tags: {
+      tag: string;
+      locked: boolean;
+      deletable: boolean;
+      userId: string;
+      userName: string;
+    }[];
     writable: boolean;
   }
-}
-
-interface ExpandedIllustrationDetails extends IllustrationDetails {
-  alt: string;
-  userId: string;
-  userName: string;
-  userAccount: string;
   userIllusts: {
-    [key: string]: IllustrationDetails;
+    [key: string]: {
+      url: string;
+    }
   };
-  urls: {
-    mini: string;
-    thumb: string;
-    small: string;
-    regular: string;
-    original: string;
-  }
-  width: number;
-  height: number;
-  pageCount: number;
-  bookmarkCount: number;
-  likeCount: number;
-  commentCount: number;
-  responseCount: number;
-  viewCount: number;
-  bookStyle: string;
-  isOriginal: boolean;
-  isBookmarkable: boolean;
-  isUnlisted: boolean;
-  commentOff: 0,
-}
-
-interface PixivIllustSearchData {
-  id: string;
-  title: string;
-  illustType: number;
-  url: string;
-  description: string;
-  tags: string[];
-  userId: string;
-  userName: string;
-  width: number;
-  height: number;
-  createDate: string;
-  updateDate: string;
-  aiType: number;
-  profileImageUrl: string;
-}
-
-interface PixivIllustSearchBody {
-  illust: { data: PixivIllustSearchData[] };
-}
-
-interface PixivTagLangTranslations {
-  en: string;
-  romaji: string;
-}
-
-interface PixivTagTranslation {
-  [key: string]: PixivTagLangTranslations;
-}
-
-interface PixivTagDetailsBody {
-  tag: string;
-  tagTranslation: PixivTagTranslation;
 }
 
 interface PixivTagDetails {
-  body: PixivTagDetailsBody
+  body: {
+    tag: string;
+    tagTranslation: {
+      [key: string]: {
+        en: string;
+        romaji: string;
+      };
+    };
+  }
 }
 
 interface PixivIllustSearch {
   error: boolean;
-  body: PixivIllustSearchBody;
+  body: {
+    illust: {
+      data: {
+        id: string;
+        aiType: number;
+      }[]
+    }
+  };
 }
 
 export interface PixivIllustDetails {
   error: boolean;
   message: string;
-  body: ExpandedIllustrationDetails;
+  body: LimitedIllustrationDetails;
 }
-
 
 const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
   try {
@@ -139,9 +87,23 @@ const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails 
 };
 
 export const loadImage = async (url: string): Promise<AxiosResponse> => {
-  // get the image data from pixiv
+
+  try {
+    return await axios.get(
+      url,
+      {
+        responseType: "arraybuffer",
+        headers: {
+          referer: "https://www.pixiv.net/",
+        }
+      }
+    );
+  } catch (e) {
+    //
+  }
+
   return await axios.get(
-    url,
+    url.split(".jpg")[0] + ".png",
     {
       responseType: "arraybuffer",
       headers: {
@@ -154,9 +116,10 @@ export const loadImage = async (url: string): Promise<AxiosResponse> => {
 export const getImageLink = async (pixivID: string, frame: string): Promise<PixivDetails | undefined> => {
 
   const res = await getIllustrationData(pixivID);
+
   if (res) {
-    const smallImageLink = res.body.urls.thumb;
-    const imageLink = res.body.urls.original;
+    const smallImageLink = res.body.userIllusts[pixivID].url;
+    const imageLink = "https://i.pximg.net/img-original/img/" + smallImageLink.split("/img/")[1].split("/" + pixivID)[0] + "/" + pixivID + "_p" + frame + ".jpg";
     const artist = res.body.userName;
     const artistID = res.body.userId;
     const artistLink = "https://www.pixiv.net/member.php?id=" + artistID;
@@ -189,7 +152,6 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
 export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined> => {
   const response = await axios("https://www.pixiv.net/ajax/search/tags/" + tagName, {
     method: "GET",
-    headers: { "accept-language": "en-US" }
   });
 
   if (response.status === 200) {
@@ -212,16 +174,15 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
   // change mode for R18, all, or all ages
   const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + page + "&s_mode=s_tag_full&lang=en&version=82d3db204a8e8b7e2f627b893751c3cc6ef300fb";
 
-  const response = await axios(searchURL, {
+  const response = await axios<PixivIllustSearch>(searchURL, {
     method: "GET",
     headers: { "accept-language": "en-US", cookie: `PHPSESSID=${token}`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" },
   });
 
   if (response.status === 200) {
-    const res = response.data as PixivIllustSearch;
-    const unfilteredIllustations = await Promise.all(res.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
+    const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
     const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
-    const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 60).map(async image => {
+    const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
       const res = await loadImage(image.smallImageLink);
       image.imageBlob = Buffer.from(res.data).toString("base64");
       return image;

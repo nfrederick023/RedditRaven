@@ -47,7 +47,6 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
 
   const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
     if (post.selectedImage) {
-
       const postRequest: SubmitRequest = {
         title: post.title,
         url: post.selectedImage.imageLink,
@@ -109,6 +108,7 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
       }
     }
   }
+
 
   if (errors.length) {
     res.statusCode = 500;

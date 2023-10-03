@@ -129,7 +129,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 
     // await new Promise(resolve => setTimeout(resolve, 15000));
 
-    const mimetype = imageResponse.headers["Content-Type"] as string ?? "";
+    const mimetype = imageResponse.headers["content-type"] as string ?? "";
     const filepath = postRequest.url.split("/").pop() || "";
 
     const uploadImageRequest = {
@@ -138,6 +138,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     };
 
     const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
+
     const uploadURL = "https:" + uploadLease.args.action;
     const formdata = new FormData();
 
