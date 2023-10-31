@@ -47,6 +47,7 @@ const addSubreddit = async (req: NextApiRequest, res: NextApiResponse): Promise<
       primaryTag: undefined,
       currentPage: "1",
       info: { flairs, ...about },
+      isNSFW: false
     };
 
     subredditList.push(newSubreddit);

@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { SuggestedImagesReq } from "@client/utils/types";
 import { checkHashedPassword } from "@server/utils/auth";
-import { getCredentials } from "@server/utils/config";
+import { getCredentials, setConfig } from "@server/utils/config";
 import { getPixivIllustrations } from "@server/api/getPixivDetails";
 
-const creds = getCredentials();
 
 const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
+  const creds = getCredentials();
   if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
     res.statusCode = 401;
     res.end(JSON.stringify("Unauthorized"));
@@ -47,8 +47,11 @@ const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promi
 
   let token = body.token;
 
-  if (!token)
+  if (!token) {
     token = creds.PIXIV_TOKEN;
+  } else {
+    setConfig({ ...creds, PIXIV_TOKEN: token });
+  }
 
   const suggestedImages = await getPixivIllustrations(body.pixivTag.jpName, body.page, body.slice, body.count, token);
 

@@ -56,6 +56,7 @@ export interface Subreddit {
   defaults: SubredditDefaults;
   categories: string[];
   currentPage: string;
+  isNSFW: boolean;
   notes: string;
 }
 
@@ -68,6 +69,7 @@ export interface PixivDetails {
   imageLink: string;
   frame: string;
   smallImageLink: string;
+  mediumImageLink: string;
   pixivLink: string;
   artist: string;
   artistID: string;

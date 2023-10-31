@@ -29,6 +29,10 @@ export const setSubredditsList = (list: Subreddit[]): void => {
   fs.writeJSONSync(getSubredditsListPath(), list);
 };
 
+export const setConfig = (creds: Credentials): void => {
+  fs.writeJSONSync(getConfigPath() + configJSON, creds);
+};
+
 export const getCredentials = (): Credentials => {
   return fs.readJSONSync(getConfigPath() + configJSON) as Credentials;
 };
@@ -69,6 +73,11 @@ export const getSubredditsList = async (): Promise<Subreddit[]> => {
 
     if (typeof subreddit.pivixTags === "undefined") {
       newSubreddit.pivixTags = [];
+      isModified = true;
+    }
+
+    if (typeof subreddit.isNSFW === "undefined") {
+      newSubreddit.isNSFW = false;
       isModified = true;
     }
 

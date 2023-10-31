@@ -6,7 +6,7 @@ import React from "react";
 class MyDocument extends Document {
   render(): ReactElement {
     return (
-      <Html>
+      <Html lang="ja" translate="no">
         <Head>
           <link rel="icon" href="/images/favicon.png" />
           <link

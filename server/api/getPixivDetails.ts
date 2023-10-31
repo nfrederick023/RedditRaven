@@ -118,7 +118,20 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
   const res = await getIllustrationData(pixivID);
 
   if (res) {
-    const smallImageLink = res.body.userIllusts[pixivID].url;
+    let smallImageLink = res.body.userIllusts[pixivID].url;
+
+    if (smallImageLink.includes("_p0")) {
+      smallImageLink = smallImageLink.split("_p0")[0] + "_p" + frame + smallImageLink.split("_p0")[1];
+    }
+    // https://www.pixiv.net/en/artworks/112321922#2
+    const text = smallImageLink.split(pixivID)[1].split("_");
+    text.pop();
+    let mediumImageLink = "https://i.pximg.net/c/540x540_70/img-master/img/" + smallImageLink.split("/img/")[1].split(pixivID)[0] + pixivID + text.join("_") + "_master1200" + ".jpg";
+
+    if (mediumImageLink.includes("_p0")) {
+      mediumImageLink = mediumImageLink.split("_p0")[0] + "_p" + frame + mediumImageLink.split("_p0")[1];
+    }
+
     const imageLink = "https://i.pximg.net/img-original/img/" + smallImageLink.split("/img/")[1].split("/" + pixivID)[0] + "/" + pixivID + "_p" + frame + ".jpg";
     const artist = res.body.userName;
     const artistID = res.body.userId;
@@ -144,6 +157,7 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
         bookmarkCount,
         likeCount,
         smallImageLink,
+        mediumImageLink,
         tags
       };
   }
@@ -183,7 +197,7 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
     const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
     const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
     const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
-      const res = await loadImage(image.smallImageLink);
+      const res = await loadImage(image.mediumImageLink);
       image.imageBlob = Buffer.from(res.data).toString("base64");
       return image;
     }));

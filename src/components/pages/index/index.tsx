@@ -59,7 +59,7 @@ const Icon = styled.div`
 const ImagePreviewWrapper = styled.div`
   display: flex;
   margin-bottom: 15px;
-  height: 500px;
+  height: 550px;
   justify-content: center;
 `;
 
@@ -83,6 +83,11 @@ const ImageLinks = styled.div`
   > a {
     margin-right: 15px;
   }
+`;
+
+const ImageTitle = styled.div`
+  margin: auto;
+  max-width: 350px;
 `;
 
 const DetailsWrapperBottom = styled(DetailsWrapper)`
@@ -177,6 +182,8 @@ const ImagePreview = styled.img`
   border-radius: 15px;
   min-height: 450px;
   max-height: 450px;
+  min-width: 350px;
+  max-width: 350px;
   cursor: pointer;
 
   ${(p: { theme: BluJayTheme; isSelected: boolean }): string =>
@@ -223,11 +230,23 @@ const Spinner = styled.div`
 
 const SpinnerBox = styled.div`
   width: 100%;
-  height: 562px;
+  height: 612px;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: transparent;
+`;
+
+const ShownImage = styled.img`
+  position: fixed;
+  top: 70%;
+  left: 54%;
+  width: 400px;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  border: 2px ${(p): string => p.theme.text} solid;
+  pointer-events: none;
+  box-shadow: 0 0 25px ${(p): string => p.theme.text};
 `;
 
 const pool = new PromisePool({ concurrency: 15 });
@@ -264,6 +283,15 @@ const createRedditPost = async (post: Post): Promise<Response> => {
   return response;
 };
 
+const saveSubreddits = async (subreddits: Subreddit[]): Promise<Response> => {
+  const response = await fetch("/api/subreddits", {
+    method: "PUT",
+    body: JSON.stringify({ subreddits }),
+  });
+
+  return response;
+};
+
 const resultsPerPageOptions = ["5", "10", "20", "50", "100"];
 interface IndexPageProps {
   subreddits: Subreddit[];
@@ -273,6 +301,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isPosting, setIsPosting] = useState(false);
+  const [hoverImage, setHoverImage] = useState<PixivDetails | undefined>(undefined);
   const [token, setToken] = useState("");
   const isInitialMount = useRef(true);
 
@@ -578,6 +607,14 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     navigator.clipboard.writeText(link);
   };
 
+  const setImage = async (image: PixivDetails | undefined): Promise<void> => {
+    if (image) {
+      setHoverImage(image);
+    } else {
+      setHoverImage(undefined);
+    }
+  };
+
   const createPost = async (): Promise<void> => {
     setIsPosting(true);
 
@@ -612,7 +649,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     const queuedResponses: Promise<Response>[] = [];
 
     for (const compiledPost of compiledPosts) {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // wait 10 seconds between each request
+      // my desperate attempt not to be rate limited
+      await new Promise((resolve) => setTimeout(resolve, 10000));
       queuedResponses.push(createRedditPost(compiledPost));
     }
 
@@ -648,6 +687,15 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       alert("Some unknown internal server error has occured!");
     }
 
+    const updatedSubreddits = subreddits.map((subreddit) => {
+      const matchingPost = posts.find((post) => post.subreddit.name === subreddit.name);
+      if (matchingPost) {
+        return matchingPost.subreddit;
+      } else {
+        return subreddit;
+      }
+    });
+    saveSubreddits(updatedSubreddits);
     setIsPosting(false);
   };
 
@@ -659,14 +707,26 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     }
   }, [paginatedResults]);
 
+  useEffect(() => {
+    //document.getElementsByTagName("head")[0]?.appendChild();
+  }, []);
+
   const subredditOptions = subreddits.map((subreddit) => subreddit.name);
   const crossPostableSubs = subreddits.filter((subreddit) => subreddit.info.isCrosspostable);
   return (
     <>
       <h1>POST</h1>
+
+      {hoverImage ? (
+        <ShownImage
+          src={"data:image/png;base64, " + hoverImage.imageBlob}
+          onMouseEnter={(): Promise<void> => setImage(hoverImage)}
+        />
+      ) : (
+        <></>
+      )}
       <DashboardContent>
         <hr />
-
         <DetailsWrapperBottom>
           <TextField onChange={handlePixivTokenChange} value={token} placeholder="Pixiv Token" />
           <Button onClick={handleTokenSubmit}>Submit</Button>
@@ -767,6 +827,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                                       src={"data:image/png;base64, " + image.imageBlob}
                                       onClick={handleImageChange(post, image)}
                                       isSelected={post.selectedImage?.imageLink === image.imageLink}
+                                      onMouseEnter={(): Promise<void> => setImage(image)}
+                                      onMouseLeave={(): Promise<void> => setImage(undefined)}
                                     />
                                     <ImageLinksWrapper>
                                       <ImageLinks>
@@ -779,6 +841,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                                           title="Copy Link"
                                         />
                                       </ImageLinks>
+                                    </ImageLinksWrapper>
+                                    <ImageLinksWrapper>
+                                      <ImageTitle translate="yes">{image.title}</ImageTitle>
                                     </ImageLinksWrapper>
                                   </ImageDetails>
                                 );

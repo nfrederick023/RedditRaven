@@ -81,6 +81,7 @@ const sourceImage = async (req: NextApiRequest, res: NextApiResponse): Promise<v
           pixivID,
           artist,
           frame,
+          mediumImageLink: pixivDetails.mediumImageLink,
           smallImageLink: pixivDetails.smallImageLink,
           likeCount: pixivDetails.likeCount,
           bookmarkCount: pixivDetails.bookmarkCount,
