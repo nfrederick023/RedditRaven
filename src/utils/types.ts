@@ -187,6 +187,7 @@ export type SuggestedImages = { suggestedImages: PixivDetails[] };
 export type SuggestedImagesReq = { pixivTag: PixivTag | undefined, page: string, slice: number, count: number; token: string };
 
 export interface Credentials {
+  APP_AGENT: string;
   SAUCENAO_KEY: string;
   REDDIT_USERNAME: string;
   REDDIT_PASSWORD: string;
