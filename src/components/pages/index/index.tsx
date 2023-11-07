@@ -651,7 +651,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     for (const compiledPost of compiledPosts) {
       // wait 30 seconds between each request
       // my desperate attempt not to be rate limited
-      await new Promise((resolve) => setTimeout(resolve, 30000));
+      await new Promise((resolve) => setTimeout(resolve, 60000));
       responses.push(await createRedditPost(compiledPost));
     }
 
