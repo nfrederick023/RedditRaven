@@ -646,16 +646,15 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       // }
     }
 
-    const queuedResponses: Promise<Response>[] = [];
+    const responses: Response[] = [];
 
     for (const compiledPost of compiledPosts) {
-      // wait 10 seconds between each request
+      // wait 30 seconds between each request
       // my desperate attempt not to be rate limited
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-      queuedResponses.push(createRedditPost(compiledPost));
+      await new Promise((resolve) => setTimeout(resolve, 30000));
+      responses.push(await createRedditPost(compiledPost));
     }
 
-    const responses: Response[] = await Promise.all(queuedResponses);
     const failedPosts: SubmissionErrors[] = [];
     let isUnknownInternalServerError = false;
 

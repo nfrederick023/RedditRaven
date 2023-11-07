@@ -79,7 +79,7 @@ const redditClient = (): Reddit => {
     password: creds.REDDIT_PASSWORD,
     appId: creds.APP_ID,
     appSecret: creds.APP_SECRET,
-    userAgent: "nodejs:LankySeatDev:v0.1.5 (by u/LankySeat)"
+    userAgent: "nodejs:RdditRaven:v1.0.0 (by u/LankySeat)"
   });
 
   reddit = redditClient;
