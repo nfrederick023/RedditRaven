@@ -57,6 +57,7 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
         sendreplies: true,
         validate_on_submit: true,
         original_content: false,
+        show_error_list: true,
         post_to_twitter: false,
         spoiler: false
       };

@@ -163,6 +163,7 @@ export interface SubmitRequest {
   kind: "link" | "self" | "image" | "video" | "videogif" | "crosspost";
   original_content: boolean;
   post_to_twitter: boolean;
+  show_error_list: boolean;
   spoiler: boolean;
 }
 
@@ -187,12 +188,13 @@ export type SuggestedImages = { suggestedImages: PixivDetails[] };
 export type SuggestedImagesReq = { pixivTag: PixivTag | undefined, page: string, slice: number, count: number; token: string };
 
 export interface Credentials {
-  APP_AGENT: string;
   SAUCENAO_KEY: string;
-  REDDIT_USERNAME: string;
-  REDDIT_PASSWORD: string;
-  APP_ID: string;
-  APP_SECRET: string;
+  //REDDIT_USERNAME: string; // deprecated because fuck reddit 
+  //REDDIT_PASSWORD: string; // deprecated because fuck reddit 
+  CLIENT_ID: string;
+  CLIENT_SECRET: string;
+  //APP_AGENT: string; // deprecated because fuck reddit 
+  REFRESH_TOKEN: string
   PIXIV_TOKEN: string;
   PASSWORD: string;
 }

@@ -2,7 +2,6 @@ import { CommentRequest, ResubmitResponse, SubmitRequest, SubmitResponse, Subred
 import { getCredentials } from "@server/utils/config";
 import { loadImage } from "./getPixivDetails";
 import FormData from "form-data";
-import Reddit from "reddit";
 import WebSocket from "websocket";
 import axios from "axios";
 
@@ -60,31 +59,53 @@ interface ParsedUTF8Data {
   }
 }
 
-let reddit: Reddit | undefined;
+interface AccessTokenRes {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token: string;
+  scope: string;
+}
 
+const redditBaseURL = "https://oauth.reddit.com";
 
-const redditClient = (): Reddit => {
-
-
-  if (reddit)
-    return reddit;
-
+const getAccessToken = async (): Promise<string> => {
   const creds = getCredentials();
+  const auth = "Basic " + Buffer.from(creds.CLIENT_ID + ":" + creds.CLIENT_SECRET).toString("base64");
 
-  /**
-   * Reddit API Credentials 
-   */
-  const redditClient: Reddit = new Reddit({
-    username: creds.REDDIT_USERNAME,
-    password: creds.REDDIT_PASSWORD,
-    appId: creds.APP_ID,
-    appSecret: creds.APP_SECRET,
-    userAgent: creds.APP_AGENT,
+  const accessTokenRes = await axios.post<AccessTokenRes>("https://www.reddit.com/api/v1/access_token", new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: creds.REFRESH_TOKEN
+  }), {
+    headers: { Authorization: auth }
   });
 
-  reddit = redditClient;
+  return accessTokenRes.data.access_token;
+};
 
-  return redditClient;
+const getReddit = async <T>(url: string): Promise<T> => {
+  const token = await getAccessToken();
+  return (await axios.get<T>(redditBaseURL + url, { headers: { Authorization: "bearer " + token } })).data;
+};
+
+const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
+  const token = await getAccessToken();
+  const formData = new FormData();
+  for (const key in req) {
+    if (typeof req[key] !== "undefined") {
+      if (typeof req[key] === "boolean") {
+        if (req[key]) {
+          formData.append(key, "true");
+        } else {
+          formData.append(key, "false");
+        }
+      } else {
+        formData.append(key, req[key]);
+      }
+    }
+  }
+  const res = await axios.post<T>(redditBaseURL + url, formData, { headers: { Authorization: "bearer " + token } });
+  return res.data;
 };
 
 
@@ -94,11 +115,11 @@ const redditClient = (): Reddit => {
  * @returns a lite version of the about.JSON data
  */
 export const getSubbredditAbout = async (subredditName: string): Promise<SubredditAbout> => {
-  const aboutRaw = (await redditClient().get<SubredditAboutRaw>(`/r/${subredditName}/about.json`)).data;
+  const aboutRaw = await getReddit<SubredditAboutRaw>(`/r/${subredditName}/about.json`);
   return {
-    url: aboutRaw.url,
-    isCrosspostable: aboutRaw.is_crosspostable_subreddit,
-    isNSFW: aboutRaw.over18
+    url: aboutRaw.data.url,
+    isCrosspostable: aboutRaw.data.is_crosspostable_subreddit,
+    isNSFW: aboutRaw.data.over18
   };
 };
 
@@ -109,7 +130,7 @@ export const getSubbredditAbout = async (subredditName: string): Promise<Subredd
  */
 export const getFlairsBySubbreddit = async (subredditName: string): Promise<SubredditFlair[]> => {
   try {
-    return (await redditClient().get<SubredditFlairRaw[]>(`/r/${subredditName}/api/link_flair`))
+    return (await getReddit<SubredditFlairRaw[]>(`/r/${subredditName}/api/link_flair`))
       .map((flairRaw): SubredditFlair => {
         return {
           name: flairRaw.text,
@@ -137,7 +158,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       mimetype
     };
 
-    const uploadLease = await redditClient().post<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
+    const uploadLease = await postReddit<UploadResponse, UploadRequest>("/api/media/asset.json", uploadImageRequest);
 
     const uploadURL = "https:" + uploadLease.args.action;
     const formdata = new FormData();
@@ -184,8 +205,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
 
     postRequest.url = uploadedImageLink;
-
-    const res = await redditClient().post<ResubmitResponse, SubmitRequest>("/api/submit", postRequest);
+    const res = await postReddit<ResubmitResponse, SubmitRequest>("/api/submit", postRequest);
     const websocket_url = res.json.data.websocket_url;
 
     // the websocket url returned from uploadResponse will give us the post thing_id after we post the image to reddit
@@ -230,9 +250,9 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 };
 
 export const submitComment = async (commentReqeust: CommentRequest): Promise<SubmitResponse> => {
-  return await redditClient().post<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
+  return await postReddit<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
 };
 
 export const submitPost = async (submitRequest: SubmitRequest): Promise<SubmitResponse> => {
-  return await redditClient().post<SubmitResponse, SubmitRequest>("/api/submit", submitRequest);
+  return await postReddit<SubmitResponse, SubmitRequest>("/api/submit", submitRequest);
 };

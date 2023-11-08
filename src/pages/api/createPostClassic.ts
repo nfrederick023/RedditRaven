@@ -38,6 +38,7 @@ const createPostClassic = async (req: NextApiRequest, res: NextApiResponse): Pro
         kind: "image",
         sendreplies: true,
         validate_on_submit: true,
+        show_error_list: true,
         original_content: false,
         post_to_twitter: false,
         spoiler: false

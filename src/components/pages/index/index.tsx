@@ -658,13 +658,13 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     const responses: Response[] = [];
 
     for (const compiledPost of compiledPosts) {
+      responses.push(await createRedditPost(compiledPost));
       if (isAbortingRef.current) {
         continue;
       }
       // wait 1 minute between each request
       // my desperate attempt not to be rate limited
-      await new Promise((resolve) => setTimeout(resolve, 60000));
-      responses.push(await createRedditPost(compiledPost));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
     const failedPosts: SubmissionErrors[] = [];
