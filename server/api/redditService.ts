@@ -91,7 +91,6 @@ const getReddit = async <T>(url: string): Promise<T> => {
 
 const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
   const token = await getAccessToken();
-  console.log(userAgent);
   const formData = new FormData();
   for (const key in req) {
     if (typeof req[key] !== "undefined") {
