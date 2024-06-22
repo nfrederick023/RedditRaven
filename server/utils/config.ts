@@ -2,7 +2,7 @@ import { Credentials, Subreddit } from "../../src/utils/types";
 import { getFlairsBySubbreddit, getSubbredditAbout } from "@server/api/redditService";
 import fs from "fs-extra";
 
-const mainDir = "RedditRaven";
+const mainDir = "data/RedditRaven";
 const configDir = "config";
 const configJSON = "config.json";
 const subredditJSON = "subreddit_list.json";

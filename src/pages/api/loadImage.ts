@@ -24,7 +24,8 @@ const sourceLink = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
 
   try {
     const response = await loadImage(link);
-    res.send(Buffer.from(response.data));
+    if (response)
+      res.send(Buffer.from(response.data));
     return;
   } catch (e) {
     res.status(500).json({ message: "Could not find an image." });

@@ -1,0 +1,9 @@
+version: "3.8" # Specify the version of Docker Compose
+
+services:
+  redditraven-service:
+    image: nfrederick023/redditraven:latest # Replace with your Docker image
+    ports:
+      - "3000:80" # Map port 80 in the container to port 8080 on the host
+    volumes:
+      - ./data/RedditRaven/config:/data/RedditRaven/config # Mount a volume
