@@ -189,7 +189,7 @@ export type SuggestedImagesReq = { pixivTag: PixivTag | undefined, page: string,
 
 export interface Credentials {
   SAUCENAO_KEY: string;
-  //REDDIT_USERNAME: string; // deprecated because fuck reddit 
+  REDDIT_USERNAME: string;
   //REDDIT_PASSWORD: string; // deprecated because fuck reddit 
   CLIENT_ID: string;
   CLIENT_SECRET: string;

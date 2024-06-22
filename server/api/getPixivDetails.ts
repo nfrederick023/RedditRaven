@@ -86,7 +86,7 @@ const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails 
   }
 };
 
-export const loadImage = async (url: string): Promise<AxiosResponse> => {
+export const loadImage = async (url: string): Promise<AxiosResponse | undefined> => {
 
   try {
     return await axios.get(
@@ -102,15 +102,19 @@ export const loadImage = async (url: string): Promise<AxiosResponse> => {
     //
   }
 
-  return await axios.get(
-    url.split(".jpg")[0] + ".png",
-    {
-      responseType: "arraybuffer",
-      headers: {
-        referer: "https://www.pixiv.net/",
+  try {
+    return await axios.get(
+      url.split(".jpg")[0] + ".png",
+      {
+        responseType: "arraybuffer",
+        headers: {
+          referer: "https://www.pixiv.net/",
+        }
       }
-    }
-  );
+    );
+  } catch (e) {
+    //
+  }
 };
 
 export const getImageLink = async (pixivID: string, frame: string): Promise<PixivDetails | undefined> => {
@@ -198,7 +202,9 @@ export const getPixivIllustrations = async (tagName: string, page: string, slice
     const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
     const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
       const res = await loadImage(image.mediumImageLink);
-      image.imageBlob = Buffer.from(res.data).toString("base64");
+      if (res) {
+        image.imageBlob = Buffer.from(res.data).toString("base64");
+      }
       return image;
     }));
 

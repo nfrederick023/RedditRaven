@@ -68,10 +68,12 @@ interface AccessTokenRes {
 }
 
 const redditBaseURL = "https://oauth.reddit.com";
+let userAgent: string | undefined;
 
 const getAccessToken = async (): Promise<string> => {
   const creds = getCredentials();
   const auth = "Basic " + Buffer.from(creds.CLIENT_ID + ":" + creds.CLIENT_SECRET).toString("base64");
+  userAgent = `linux:RdditRaven:v1.0.1 (by /u/${creds.REDDIT_USERNAME})`;
 
   const accessTokenRes = await axios.post<AccessTokenRes>("https://www.reddit.com/api/v1/access_token", new URLSearchParams({
     grant_type: "refresh_token",
@@ -79,17 +81,17 @@ const getAccessToken = async (): Promise<string> => {
   }), {
     headers: { Authorization: auth }
   });
-
   return accessTokenRes.data.access_token;
 };
 
 const getReddit = async <T>(url: string): Promise<T> => {
   const token = await getAccessToken();
-  return (await axios.get<T>(redditBaseURL + url, { headers: { Authorization: "bearer " + token } })).data;
+  return (await axios.get<T>(redditBaseURL + url, { headers: { Authorization: "bearer " + token, "User-Agent": userAgent } })).data;
 };
 
 const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
   const token = await getAccessToken();
+  console.log(userAgent);
   const formData = new FormData();
   for (const key in req) {
     if (typeof req[key] !== "undefined") {
@@ -104,7 +106,7 @@ const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
       }
     }
   }
-  const res = await axios.post<T>(redditBaseURL + url, formData, { headers: { Authorization: "bearer " + token } });
+  const res = await axios.post<T>(redditBaseURL + url, formData, { headers: { Authorization: "bearer " + token, "User-Agent": userAgent } });
   return res.data;
 };
 
@@ -144,13 +146,12 @@ export const getFlairsBySubbreddit = async (subredditName: string): Promise<Subr
   }
 };
 export const submitImagePost = async (postRequest: SubmitRequest): Promise<string> => {
-
   if (postRequest.url) {
     const imageResponse = await loadImage(postRequest.url);
 
     // await new Promise(resolve => setTimeout(resolve, 15000));
 
-    const mimetype = imageResponse.headers["content-type"] as string ?? "";
+    const mimetype = imageResponse?.headers["content-type"] as string ?? "";
     const filepath = postRequest.url.split("/").pop() || "";
 
     const uploadImageRequest = {
@@ -178,7 +179,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
       }
     }
 
-    const imageData = Buffer.from(imageResponse.data);
+    const imageData = Buffer.from(imageResponse?.data);
 
     //const buffer = Buffer.from(await (blob).arrayBuffer());
     allLeaseItems.forEach(item => formdata.append(item.name, item.value));
