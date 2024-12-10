@@ -6,8 +6,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "dev": "next dev -p 3081",
-    "start:dev": "next dev",
+    "dev": "next dev -p 3090",
+    "start:dev": "next dev -p 3090",
     "build": "next build",
     "start": "next start",
     "test:e2e": "npx playwright test"

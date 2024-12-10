@@ -2,25 +2,20 @@ import { Credentials, Subreddit } from "../../src/utils/types";
 import { getFlairsBySubbreddit, getSubbredditAbout } from "@server/api/redditService";
 import fs from "fs-extra";
 
-const mainDir = "data/RedditRaven";
-const configDir = "config";
+const mainDir = "data/redditraven";
 const configJSON = "config.json";
 const subredditJSON = "subreddit_list.json";
 
 export const getPath = (): string => {
-  const dir = `/${mainDir}`;
+  const dir = `/${mainDir}/`;
   if (dir)
     return checkCreateDir(dir);
   throw ("Required: \"path\" configuration property not found!");
 };
 
-export const getConfigPath = (): string => {
-  const dir = getPath() + `/${configDir}/`;
-  return checkCreateDir(dir);
-};
 
 export const getSubredditsListPath = (): string => {
-  const dir = getConfigPath() + subredditJSON;
+  const dir = getPath() + subredditJSON;
   checkCreateJSON(dir, []);
   return dir;
 };
@@ -30,11 +25,11 @@ export const setSubredditsList = (list: Subreddit[]): void => {
 };
 
 export const setConfig = (creds: Credentials): void => {
-  fs.writeJSONSync(getConfigPath() + configJSON, creds);
+  fs.writeJSONSync(getPath() + configJSON, creds);
 };
 
 export const getCredentials = (): Credentials => {
-  return fs.readJSONSync(getConfigPath() + configJSON) as Credentials;
+  return fs.readJSONSync(getPath() + configJSON) as Credentials;
 };
 
 export const getSubredditsList = async (): Promise<Subreddit[]> => {

@@ -50,10 +50,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-USER nextjs
+RUN mkdir /data
+RUN chown nextjs:nodejs /data
 
-EXPOSE 80
-ENV PORT 80
-VOLUME /RedditRaven
+USER nextjs
+EXPOSE 3090
+ENV PORT 3090
 
 CMD ["node", "server.js"]

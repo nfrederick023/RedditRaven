@@ -2,7 +2,7 @@ import { CommentRequest, Post, SubmissionErrors, SubmitRequest, Subreddit, Subre
 import { NextApiRequest, NextApiResponse } from "next";
 import { checkHashedPassword } from "@server/utils/auth";
 import { getSubredditsList } from "@server/utils/config";
-import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
+import { submitComment, submitImagePost, submitPost, waitForAwhile } from "@server/api/redditService";
 
 export const config = {
   api: {

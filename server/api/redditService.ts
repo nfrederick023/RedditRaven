@@ -109,6 +109,15 @@ const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
   return res.data;
 };
 
+export const waitForAwhile = (): Promise<void> => {
+  // the purpose of this function is to wait 15 seconds to prevent Reddit from marking our posts as spam
+  return new Promise<void>((res) => {
+    setTimeout(() => {
+      res();
+    }, 30000);
+  });
+};
+
 
 /**
  * Retrieves the about.JSON for a subreddit
@@ -205,6 +214,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     const uploadedImageLink = uploadURL + "/" + getItemByName("key")?.value;
 
     postRequest.url = uploadedImageLink;
+    await waitForAwhile();
     const res = await postReddit<ResubmitResponse, SubmitRequest>("/api/submit", postRequest);
     const websocket_url = res.json.data.websocket_url;
 
@@ -243,6 +253,7 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 
     // parse the thing_id out from the post link, and return the thing_id to be used for making comments 
     const thing_id = "t3_" + postLink.split("comments/")[1].split("/")[0];
+
     return thing_id;
   }
 
@@ -250,9 +261,11 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
 };
 
 export const submitComment = async (commentReqeust: CommentRequest): Promise<SubmitResponse> => {
+  await waitForAwhile();
   return await postReddit<SubmitResponse, CommentRequest>("/api/comment", commentReqeust);
 };
 
 export const submitPost = async (submitRequest: SubmitRequest): Promise<SubmitResponse> => {
+  await waitForAwhile();
   return await postReddit<SubmitResponse, SubmitRequest>("/api/submit", submitRequest);
 };
