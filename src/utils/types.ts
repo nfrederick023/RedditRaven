@@ -205,3 +205,5 @@ export interface SubmissionErrors {
   subredditName: string;
   error: unknown;
 }
+
+export type PostHistory = { subreddit: string, postedIDs: string[] }[];

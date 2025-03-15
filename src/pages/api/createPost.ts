@@ -1,8 +1,8 @@
 import { CommentRequest, Post, SubmissionErrors, SubmitRequest, Subreddit, SubredditFlair } from "@client/utils/types";
 import { NextApiRequest, NextApiResponse } from "next";
 import { checkHashedPassword } from "@server/utils/auth";
-import { getSubredditsList } from "@server/utils/config";
-import { submitComment, submitImagePost, submitPost, waitForAwhile } from "@server/api/redditService";
+import { getHistory, getSubredditsList, setHistory } from "@server/utils/config";
+import { submitComment, submitImagePost, submitPost } from "@server/api/redditService";
 
 export const config = {
   api: {
@@ -43,6 +43,28 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
 
   const errors: SubmissionErrors[] = [];
 
+  const addIDtoHistory = (subredditName: string, id: string): void => {
+    const currentHistory = getHistory();
+
+    // if the subreddit doesn't exist in the history, add it
+    // else, find the subreddit in history and append the id
+    if (!currentHistory.find(history => history.subreddit === subredditName)) {
+      currentHistory.push({ subreddit: subredditName, postedIDs: [id] });
+      setHistory(currentHistory);
+    } else {
+      setHistory(currentHistory.map(history => {
+        if (history.subreddit === subredditName) {
+          return {
+            subreddit: subredditName,
+            postedIDs: [...history.postedIDs, id]
+          };
+        }
+
+        return history;
+      }));
+    }
+  };
+
   const generatePost = async (subreddit: Subreddit, flair: SubredditFlair | null): Promise<void> => {
     if (post.selectedImage) {
       const postRequest: SubmitRequest = {
@@ -63,6 +85,7 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
       };
 
       const imagePostResponse = await submitImagePost(postRequest);
+      addIDtoHistory(subreddit.name, post.selectedImage.pixivID);
 
       const commentReqeust: CommentRequest = {
         text: post.comment,
@@ -82,6 +105,8 @@ const createPost = async (req: NextApiRequest, res: NextApiResponse): Promise<vo
         postRequest.sr = crosspost.name;
         postRequest.flair_id = crosspost.defaults.flair?.id;
         const postResponse = await submitPost(postRequest);
+        addIDtoHistory(crosspost.name, post.selectedImage.pixivID);
+
         commentReqeust.thing_id = postResponse.json.data.name;
         if (post.comment) {
           await submitComment(commentReqeust);

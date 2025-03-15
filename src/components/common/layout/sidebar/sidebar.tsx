@@ -131,13 +131,7 @@ const Sidebar: FC = () => {
                   <h1>RAVEN</h1>
                 </Logo>
                 <PageButton title={"Post"} icon={"bx bxs-dashboard"} url={"/"} />
-                <PageButton title={"Classic"} icon={"bx bxs-cube"} url={"/classic"} />
-
-                <PageButton title={"Schedule"} icon={"bx bx-time"} url={"/schedule"} />
-
                 <PageButton title={"Subreddits"} icon={"bx bx-list-ul"} url={"/subreddits"} />
-
-                <PageButton title={"Stats"} icon={"bx bx-stats"} url={"/stats"} />
               </>
             )}
           </SidebarContent>

@@ -53,7 +53,7 @@ const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promi
     setConfig({ ...creds, PIXIV_TOKEN: token });
   }
 
-  const suggestedImages = await getPixivIllustrations(body.pixivTag.jpName, body.page, body.slice, body.count, token);
+  const suggestedImages = await getPixivIllustrations(body.pixivTag.jpName, Number(body.page), body.slice, body.count, token);
 
   if (!suggestedImages) {
     res.status(500).json({ message: "Failed to get Pixiv Tag Suggested Images!" });

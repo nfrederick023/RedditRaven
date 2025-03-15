@@ -127,7 +127,7 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
     if (smallImageLink.includes("_p0")) {
       smallImageLink = smallImageLink.split("_p0")[0] + "_p" + frame + smallImageLink.split("_p0")[1];
     }
-    // https://www.pixiv.net/en/artworks/112321922#2
+
     const text = smallImageLink.split(pixivID)[1].split("_");
     text.pop();
     let mediumImageLink = "https://i.pximg.net/c/540x540_70/img-master/img/" + smallImageLink.split("/img/")[1].split(pixivID)[0] + pixivID + text.join("_") + "_master1200" + ".jpg";
@@ -188,9 +188,9 @@ export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined
   }
 };
 
-export const getPixivIllustrations = async (tagName: string, page: string, slice: number, count: number, token: string): Promise<SuggestedImages | undefined> => {
+export const getPixivIllustrations = async (tagName: string, page: number, slice: number, count: number, token: string): Promise<SuggestedImages | undefined> => {
   // change mode for R18, all, or all ages
-  const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + page + "&s_mode=s_tag_full&lang=en&version=82d3db204a8e8b7e2f627b893751c3cc6ef300fb";
+  const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + (page + 1) + "&s_mode=s_tag_full&lang=en&version=82d3db204a8e8b7e2f627b893751c3cc6ef300fb";
 
   const response = await axios<PixivIllustSearch>(searchURL, {
     method: "GET",

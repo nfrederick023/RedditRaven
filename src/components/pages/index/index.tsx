@@ -2,6 +2,7 @@ import {
   BluJayTheme,
   PixivDetails,
   Post,
+  PostHistory,
   SubmissionErrors,
   Subreddit,
   SuggestedImages,
@@ -9,6 +10,7 @@ import {
 } from "@client/utils/types";
 import PromisePool from "async-promise-pool";
 import React, { FC, useEffect, useRef, useState } from "react";
+import ScrollContainer from "react-indiana-drag-scroll";
 import Select from "@client/components/common/shared/select";
 import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
 import TextField from "@client/components/common/shared/text-field";
@@ -56,11 +58,9 @@ const Icon = styled.div`
   }
 `;
 
-const ImagePreviewWrapper = styled.div`
+const ImagePreviewWrapper = styled(ScrollContainer)`
   display: flex;
-  margin-bottom: 15px;
-  height: 550px;
-  justify-content: center;
+  overflow-x: scroll;
 `;
 
 const DetailsWrapper = styled.div`
@@ -95,44 +95,41 @@ const DetailsWrapperBottom = styled(DetailsWrapper)`
 `;
 
 const DetailsTitle = styled.div`
-  width: 40%;
+  width: 50%;
   > div {
     width: 100%;
   }
 `;
 
 const DetailsFlair = styled.div`
-  width: 20%;
+  width: 50%;
   > div {
     width: 100%;
   }
 `;
 
 const DetailsCrosspost = styled.div`
-  width: 34%;
+  width: 48%;
   > div {
     width: 100%;
   }
 `;
 
 const DetailsR18 = styled.div`
-  width: 3%;
+  justify-content: center;
+  width: 4%;
   > div {
     width: 100%;
   }
 `;
 
-const DetailsComment = styled.div`
-  width: 3%;
-`;
-
 const DetailsSubreddit = styled.div`
-  width: 25%;
+  width: 50%;
   overflow: hidden;
 `;
 
 const DetailsPixivTag = styled.div`
-  width: 30%;
+  width: 50%;
   > div {
     width: 100%;
   }
@@ -143,7 +140,7 @@ const DetailsPixivTag = styled.div`
 `;
 
 const DetailsLink = styled.div`
-  width: 50%;
+  width: 48%;
   > div {
     width: 100%;
   }
@@ -161,6 +158,13 @@ const CreateSpinner = styled.div`
 
 const CreditButtons = styled(ButtonBase)``;
 
+const ClearButtons = styled(ButtonBase)`
+  width: 50%;
+  > div {
+    width: 100%;
+  }
+`;
+
 const GreyText = styled.div`
   color: ${(p): string => p.theme.textContrast};
 `;
@@ -171,25 +175,26 @@ const NoSearchResults = styled.div`
 `;
 
 const ImageDetails = styled.div`
-  max-width: 24%;
   margin-right: 5px;
   margin-left: 5px;
 `;
 
 const ImagePreview = styled.img`
-  max-width: 100%;
+  /* max-width: 100%; */
   object-fit: cover;
   border-radius: 15px;
   min-height: 450px;
   max-height: 450px;
-  min-width: 350px;
-  max-width: 350px;
+  /* min-width: 350px;
+  max-width: 350px; */
   cursor: pointer;
 
-  ${(p: { theme: BluJayTheme; isSelected: boolean }): string =>
+  ${(p: { theme: BluJayTheme; isSelected: boolean; hasAlreadyPosted: boolean }): string =>
     p.isSelected
       ? `border: 2px ${p.theme.text} solid; box-shadow: 0 0 25px ${p.theme.text};`
       : `border: 2px ${p.theme.background} solid; `};
+
+  ${(p): string => (p.hasAlreadyPosted ? "opacity: 0.2;" : "")};
 `;
 // ${(p: {isSelected: boolean}): string => }
 const Checkbox = styled.input`
@@ -299,14 +304,14 @@ interface IndexPageProps {
 
 const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const [paginatedResults, setPaginatedResults] = useState<Subreddit[]>([]);
+  const [history, setHistory] = useState<PostHistory>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isPosting, setIsPosting] = useState(false);
-  const [isAborting, setIsAborting] = useState(false);
   const [hoverImage, setHoverImage] = useState<PixivDetails | undefined>(undefined);
   const [token, setToken] = useState("");
   const isInitialMount = useRef(true);
   const isAbortingRef = useRef(false);
-  isAbortingRef.current = isAborting;
+  const timesPosted = useRef(0);
 
   const createPosts = async (): Promise<void> => {
     const slice = 0;
@@ -351,6 +356,12 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     await pool.all();
   };
 
+  const retrieveHistoryList = async (): Promise<void> => {
+    const response = await fetch("/api/history", { method: "GET" });
+    const res = (await response.json()) as PostHistory;
+    setHistory(res);
+  };
+
   const retrieveSuggestedImages = async (post: Post, page: string): Promise<PixivDetails[]> => {
     const body: SuggestedImagesReq = {
       pixivTag: post.pixivTag,
@@ -375,14 +386,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         })
       );
     }
-  };
-
-  const increaseSlice = (post: Post) => (): void => {
-    getNewSlice(post, post.slice + 1);
-  };
-
-  const decreaseSlice = (post: Post) => (): void => {
-    if (post.slice - 1 >= 0) getNewSlice(post, post.slice - 1);
   };
 
   const handlePixivTokenChange = (token: string): void => {
@@ -454,6 +457,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   const handleLinkChange = (postToUpdate: Post) => {
     return async (newLink: string): Promise<void> => {
       let pixivDetails: PixivDetails | undefined;
+
+      // set the current subreddit to loading while we get the results
       setPosts(
         posts.map((post) => {
           if (post.subreddit.name === postToUpdate.subreddit.name) {
@@ -464,6 +469,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         })
       );
 
+      // verify that the link is valid before retrieve the results
       if (newLink.includes("https://www.pixiv.net/") && newLink.includes("/artworks/")) {
         if (newLink.includes("#")) {
           if (newLink.split("#")[1]) {
@@ -474,7 +480,11 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         }
       }
 
-      if (pixivDetails) {
+      // if the link is blank, get the regular results
+      // else check if the link return valid resuts
+      if (newLink === "") {
+        goToPage(postToUpdate, postToUpdate.subreddit.currentPage)();
+      } else if (pixivDetails) {
         const parsedArtistName = pixivDetails.artist.split("@")[0];
         const defaultTitle = postToUpdate.subreddit.defaults.title;
         let title = "";
@@ -494,6 +504,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           })
         );
       } else {
+        // if we somehow get here, show nothing
         setPosts(
           posts.map((post) => {
             if (post.subreddit.name === postToUpdate.subreddit.name) {
@@ -597,10 +608,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
     }
   };
 
-  const viewNote = (subreddit: Subreddit) => (): void => {
-    alert(subreddit.notes);
-  };
-
   const handleTokenSubmit = (): void => {
     setPosts([]);
     setPaginatedResults([...paginatedResults]);
@@ -619,13 +626,55 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   };
 
   const abortPosts = (): void => {
-    if (!isAborting) {
-      setIsAborting(true);
+    if (!isAbortingRef.current) {
+      setIsPosting(false);
+      isAbortingRef.current = true;
     }
+  };
+
+  const clearAlreadyPosted = (): void => {
+    setPosts(
+      posts.map<Post>((post) => {
+        if (
+          history
+            .find((history) => history.subreddit === post.subreddit.name)
+            ?.postedIDs.includes(post.selectedImage?.pixivID ?? "")
+        ) {
+          return {
+            ...post,
+            selectedImage: undefined,
+            title: post.subreddit.defaults.title,
+            crossposts: [],
+            multipost: [],
+            flair: post.subreddit.defaults.flair,
+          };
+        }
+
+        return post;
+      })
+    );
+  };
+
+  const clearAll = (): void => {
+    setPosts(
+      posts.map<Post>((post) => {
+        return {
+          ...post,
+          selectedImage: undefined,
+          title: post.subreddit.defaults.title,
+          crossposts: [],
+          multipost: [],
+          flair: post.subreddit.defaults.flair,
+        };
+      })
+    );
   };
 
   const createPost = async (): Promise<void> => {
     setIsPosting(true);
+    timesPosted.current += 1;
+    const currentTimePosted = timesPosted.current;
+    isAbortingRef.current = false;
 
     const compiledPosts: Post[] = [];
     posts.forEach((post) => {
@@ -646,70 +695,75 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         alert(`Subreddit: ${post.subreddit.name} is missing a title!`);
         return;
       }
-
-      // if (!post.flair && post.subreddit.info.flairs.length) {
-      //   const notAllFlairsSelectedConfirmation = !confirm(
-      //     "Not all flairs are selected. Are you sure you wish to continue?"
-      //   );
-      //   if (notAllFlairsSelectedConfirmation) return;
-      // }
-    }
-
-    const responses: Response[] = [];
-
-    for (const compiledPost of compiledPosts) {
-      responses.push(await createRedditPost(compiledPost));
-      if (isAbortingRef.current) {
-        continue;
-      }
-      // wait 1 minute between each request
-      // my desperate attempt not to be rate limited
-      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
     const failedPosts: SubmissionErrors[] = [];
     let isUnknownInternalServerError = false;
-
-    for (const res of responses) {
-      if (!res.ok) {
-        let json: { errors: SubmissionErrors[] } | undefined;
-        try {
-          json = await res.json();
-        } catch (e) {
-          //
+    const responses: Response[] = [];
+    try {
+      for (const compiledPost of compiledPosts) {
+        if (isAbortingRef.current) {
+          throw "Abort";
         }
-        if (json && json.errors) {
-          failedPosts.push(...json.errors);
-        } else {
-          isUnknownInternalServerError = true;
+
+        responses.push(await createRedditPost(compiledPost));
+        await retrieveHistoryList();
+
+        // on all but the last one
+        if (compiledPost.selectedImage?.pixivID !== compiledPosts[compiledPosts.length - 1].selectedImage?.pixivID) {
+          // wait 1 minute between each request
+          // my desperate attempt not to be rate limited
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+
+        if (timesPosted.current !== currentTimePosted) {
+          throw "Abort";
         }
       }
-    }
 
-    if (failedPosts.length === 0) {
-      alert("Success!");
-    } else {
-      alert("One or More Posts Failed! See Console Logs for Details.");
-      // eslint-disable-next-line no-console
-      console.error(failedPosts);
-    }
+      for (const res of responses) {
+        if (!res.ok) {
+          let json: { errors: SubmissionErrors[] } | undefined;
+          try {
+            json = await res.json();
+          } catch (e) {
+            console.log(e);
+          }
+          if (json && json.errors) {
+            failedPosts.push(...json.errors);
+          } else {
+            isUnknownInternalServerError = true;
+          }
+        }
+      }
 
-    if (isUnknownInternalServerError) {
-      alert("Some unknown internal server error has occured!");
-    }
-
-    const updatedSubreddits = subreddits.map((subreddit) => {
-      const matchingPost = posts.find((post) => post.subreddit.name === subreddit.name);
-      if (matchingPost) {
-        return matchingPost.subreddit;
+      if (failedPosts.length === 0) {
+        alert("Success!");
       } else {
-        return subreddit;
+        alert(
+          "One or More Posts Failed! \n" +
+            failedPosts.map((failedPost) => failedPost.subredditName + ": " + failedPost.error + "\n.")
+        );
+        // eslint-disable-next-line no-console
+        console.error();
       }
-    });
-    saveSubreddits(updatedSubreddits);
-    setIsPosting(false);
-    if (isAbortingRef.current) {
-      setIsAborting(false);
+
+      if (isUnknownInternalServerError) {
+        alert("Some unknown internal server error has occured!");
+      }
+
+      const updatedSubreddits = subreddits.map((subreddit) => {
+        const matchingPost = posts.find((post) => post.subreddit.name === subreddit.name);
+        if (matchingPost) {
+          return matchingPost.subreddit;
+        } else {
+          return subreddit;
+        }
+      });
+      saveSubreddits(updatedSubreddits);
+      setIsPosting(false);
+    } catch (e) {
+      //
     }
   };
 
@@ -722,7 +776,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
   }, [paginatedResults]);
 
   useEffect(() => {
-    //document.getElementsByTagName("head")[0]?.appendChild();
+    retrieveHistoryList();
   }, []);
 
   const subredditOptions = subreddits.map((subreddit) => subreddit.name);
@@ -769,9 +823,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                       <DetailsPixivTag>
                         <h4>Pixiv Tag</h4>
                       </DetailsPixivTag>
-                      <DetailsLink>
-                        <h4>Multi-Post</h4>
-                      </DetailsLink>
                     </DetailsWrapper>
                     <DetailsWrapperBottom>
                       <DetailsSubreddit>
@@ -793,15 +844,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                           <Icon className="bx bx-link-external" title="Open in New Tab" />
                         </a>
                       </DetailsPixivTag>
-                      <DetailsLink>
-                        <Select
-                          options={subredditOptions}
-                          onChange={handleSubredditChange(post)}
-                          value={post.multipost}
-                          isMulti
-                          isClearable
-                        />
-                      </DetailsLink>
                     </DetailsWrapperBottom>
                     {post.isLoading ? (
                       <SpinnerBox>
@@ -810,8 +852,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                     ) : (
                       <>
                         <DetailsWrapperBottom>
-                          <Icon className="bx bx-chevron-left" onClick={decreaseSlice(post)} />
-                          <Icon className="bx bx-chevron-right" onClick={increaseSlice(post)} />
                           <CurentPageWrapper>
                             <TextField onChange={handleLinkChange(post)} value={post.customLink} placeholder="Link" />
                           </CurentPageWrapper>
@@ -825,15 +865,20 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                           <Icon className="bx bx-send" onClick={goToPage(post, post.subreddit.currentPage)} />
                         </DetailsWrapperBottom>
                         <ImagePreviewWrapper>
-                          {post.suggestedImages.slice(post.slice * 4, post.slice * 4 + 4).map((image, i) => {
+                          {post.suggestedImages.map((image, i) => {
                             return (
                               <ImageDetails key={i}>
                                 <ImagePreview
                                   src={"data:image/png;base64, " + image.imageBlob}
                                   onClick={handleImageChange(post, image)}
                                   isSelected={post.selectedImage?.imageLink === image.imageLink}
-                                  onMouseEnter={(): Promise<void> => setImage(image)}
-                                  onMouseLeave={(): Promise<void> => setImage(undefined)}
+                                  hasAlreadyPosted={
+                                    !!history
+                                      .find((history) => history.subreddit === post.subreddit.name)
+                                      ?.postedIDs.includes(image.pixivID)
+                                  }
+                                  // onMouseEnter={(): Promise<void> => setImage(image)}
+                                  // onMouseLeave={(): Promise<void> => setImage(undefined)}
                                 />
                                 <ImageLinksWrapper>
                                   <ImageLinks>
@@ -863,15 +908,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                       <DetailsFlair>
                         <h4>Flair</h4>
                       </DetailsFlair>
-                      <DetailsCrosspost>
-                        <h4>Crosspost</h4>
-                      </DetailsCrosspost>
-                      <DetailsR18>
-                        <h4>R18</h4>
-                      </DetailsR18>
-                      <DetailsComment>
-                        <h4>CC</h4>
-                      </DetailsComment>
                     </DetailsWrapper>
                     <DetailsWrapperBottom>
                       <DetailsTitle>
@@ -893,6 +929,29 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                           <GreyText>No Flair</GreyText>
                         )}
                       </DetailsFlair>
+                    </DetailsWrapperBottom>
+
+                    <DetailsWrapper>
+                      <DetailsLink>
+                        <h4>Multi-Post</h4>
+                      </DetailsLink>
+                      <DetailsCrosspost>
+                        <h4>Crosspost</h4>
+                      </DetailsCrosspost>
+                      <DetailsR18>
+                        <h4>R18</h4>
+                      </DetailsR18>
+                    </DetailsWrapper>
+                    <DetailsWrapperBottom>
+                      <DetailsLink>
+                        <Select
+                          options={subredditOptions}
+                          onChange={handleSubredditChange(post)}
+                          value={post.multipost}
+                          isMulti
+                          isClearable
+                        />
+                      </DetailsLink>
                       <DetailsCrosspost>
                         <Select
                           options={crossPostableSubs.map((sub) => sub.name)}
@@ -907,12 +966,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                           <Checkbox type="checkbox" checked={post.isNSFW} onChange={handleNSFWChange(post.subreddit)} />
                         </CheckboxLabel>
                       </DetailsR18>
-                      <DetailsComment>
-                        <Icon className="bx bx-note" onClick={viewNote(post.subreddit)} title={post.subreddit.notes} />
-                      </DetailsComment>
                     </DetailsWrapperBottom>
-
-                    {/* <div>comment</div> */}
                   </div>
                 </div>
               );
@@ -921,6 +975,14 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         ) : (
           <NoSearchResults>No Subreddits Found!</NoSearchResults>
         )}
+        <DetailsWrapperBottom>
+          <ClearButtons>
+            <Button onClick={clearAlreadyPosted}>Clear Already Posted</Button>
+          </ClearButtons>
+          <ClearButtons>
+            <Button onClick={clearAll}>Clear All</Button>
+          </ClearButtons>
+        </DetailsWrapperBottom>
         {!isPosting ? (
           <>
             <hr />
@@ -936,13 +998,9 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           </>
         ) : (
           <>
-            {!isAborting ? (
-              <CreditButtons>
-                <Button onClick={abortPosts}>ABORT!!</Button>
-              </CreditButtons>
-            ) : (
-              <>Is aborting...</>
-            )}
+            <CreditButtons>
+              <Button onClick={abortPosts}>Cancel</Button>
+            </CreditButtons>
             <SpinnerBox>
               <Spinner />
             </SpinnerBox>

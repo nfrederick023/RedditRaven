@@ -11,137 +11,117 @@ import Sidebar from "@client/components/common/layout/sidebar/sidebar";
 import styled, { ThemeProvider, createGlobalStyle } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
-html {
-  font-family: 'Montserrat';
-  background-color: ${(p): string => p.theme.background};
-  color: ${(p): string => p.theme.text};
-}
-
-input, textarea, select { 
-  font-family:inherit; 
-  font-size: inherit; 
-}
-
-// prevents content shift on scrollbar
-body {
-  width: calc(100vw - 17px);
-}
-
-// hide scrollbar on 100vh
-* {
-    box-sizing: border-box;
-}
-
-// hide scrollbar on 100vh
-html, body {
-  margin: 0px;
-  padding: 0px;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  margin: 0px;
-}
-
-h1 {
-  line-height: 75%;
-  font-size: 1.9em;
-  font-weight: 900;
-}
-
-h2 {
-  font-size: 1.7em;
-  font-weight: 900;
-  margin-top: 25px;
-}
-
-h5{
-  font-size: 1em;
-  font-weight: 500;
-}
-
-h6{
-  font-size: 0.83em;
-  font-weight: 500;
-}
-
-hr{
-  border-color: ${(p): string => p.theme.textContrast};
-  margin-top: 3px;
-  margin-bottom: 15px;
-}
-
-a {
-  text-decoration: none;
-}
-
-/* unvisited link */
-a:link {
-  color: ${(p): string => p.theme.textContrast};
-}
-
-/* visited link */
-a:visited {
-  color: ${(p): string => p.theme.textContrast};
-}
-
-/* mouse over link */
-a:hover {
-   color: ${(p): string => p.theme.text};
-}
-
-/* selected link */
-a:active {
-  color: ${(p): string => p.theme.highlightDark};
-}
-
-.sidebar-button {
-    background: linear-gradient(to top right, #4481eb, #04befe);
-    border: none;
-    border-radius: 10px;
-    color: white;
-    font-family: 'Montserrat SemiBold', sans-serif;
-    text-align: left;
-    height: 45px;
-    width: 200px;
-    padding-left: 30px;
-    font-size: large;
-}
-
-.MuiPickersDay-root, .MuiPickersYear-yearButton{
-  transition: all 0.1s ease-in;
-
-  &:hover {
-    background-color: ${(p): string => p.theme.highlightLight} !important;
+  html {
+    font-family: 'Montserrat';
+    background-color: ${(p): string => p.theme.background};
+    color: ${(p): string => p.theme.text};
   }
-}
 
+  input, textarea, select { 
+    font-family:inherit; 
+    font-size: inherit; 
+  }
 
-.MuiClockPointer-root, .MuiClock-pin, .MuiClockPointer-thumb, .MuiPickersDay-root.Mui-selected, .MuiPickersYear-yearButton.Mui-selected{
-  background-color: ${(p): string => p.theme.highlightDark} !important;
-}
+  body {
+    // prevents content shift on scrollbar
+    width: calc(100vw - 17px);
 
+    ::-webkit-scrollbar {
+      width: 7px;
+    }
 
-.MuiClockPointer-thumb {
-  border-color: ${(p): string => p.theme.highlightDark} !important;
-}
-.MuiPaper-root {
-    background-color: ${(p): string => p.theme.backgroundContrast} !important;
+    /* Track */
+    ::-webkit-scrollbar-track {
+      background: #ffffff00;
+    }
 
-}
+    /* Handle */
+    ::-webkit-scrollbar-thumb {
+      background: #232428;
+      background-clip: content-box;
+      border: 1px solid transparent;
+    }
+  }
 
- .MuiDialog-paper {
-    background-color: ${(p): string => p.theme.background} !important;
-    box-shadow: 0px 0px 0px 0px !important;
- }
+  // hide scrollbar on 100vh
+  * {
+      box-sizing: border-box;
+  }
 
- .MuiTypography-root, .MuiClockNumber-root, .MuiSvgIcon-root, .MuiPickersFadeTransitionGroup-root, .MuiButtonBase-root {
-  color: ${(p): string => p.theme.text} !important;
- }
+  // hide scrollbar on 100vh
+  html, body {
+    margin: 0px;
+    padding: 0px;
+  }
 
- .MuiInputBase-input {
-  font-family: "Montserrat" !important;
+  h1, h2, h3, h4, h5, h6 {
+    margin: 0px;
+  }
 
- }
+  h1 {
+    line-height: 75%;
+    font-size: 1.9em;
+    font-weight: 900;
+  }
+
+  h2 {
+    font-size: 1.7em;
+    font-weight: 900;
+    margin-top: 25px;
+  }
+
+  h5{
+    font-size: 1em;
+    font-weight: 500;
+  }
+
+  h6{
+    font-size: 0.83em;
+    font-weight: 500;
+  }
+
+  hr{
+    border-color: ${(p): string => p.theme.textContrast};
+    margin-top: 3px;
+    margin-bottom: 15px;
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  /* unvisited link */
+  a:link {
+    color: ${(p): string => p.theme.textContrast};
+  }
+
+  /* visited link */
+  a:visited {
+    color: ${(p): string => p.theme.textContrast};
+  }
+
+  /* mouse over link */
+  a:hover {
+    color: ${(p): string => p.theme.text};
+  }
+
+  /* selected link */
+  a:active {
+    color: ${(p): string => p.theme.highlightDark};
+  }
+
+  .sidebar-button {
+      background: linear-gradient(to top right, #4481eb, #04befe);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'Montserrat SemiBold', sans-serif;
+      text-align: left;
+      height: 45px;
+      width: 200px;
+      padding-left: 30px;
+      font-size: large;
+  }
 `;
 
 const LayoutWrapper = styled.div`

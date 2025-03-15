@@ -39,6 +39,7 @@
     "react": "^18.2.0",
     "react-cookie": "^4.1.1",
     "react-dom": "^18.2.0",
+    "react-indiana-drag-scroll": "^2.2.1",
     "reddit": "^1.2.1",
     "saucenao": "^0.0.2",
     "styled-components": "^5.1.1",

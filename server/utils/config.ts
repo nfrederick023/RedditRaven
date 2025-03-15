@@ -1,9 +1,10 @@
-import { Credentials, Subreddit } from "../../src/utils/types";
+import { Credentials, PostHistory, Subreddit } from "../../src/utils/types";
 import { getFlairsBySubbreddit, getSubbredditAbout } from "@server/api/redditService";
 import fs from "fs-extra";
 
 const mainDir = "data/redditraven";
 const configJSON = "config.json";
+const historyJSON = "history.json";
 const subredditJSON = "subreddit_list.json";
 
 export const getPath = (): string => {
@@ -16,7 +17,13 @@ export const getPath = (): string => {
 
 export const getSubredditsListPath = (): string => {
   const dir = getPath() + subredditJSON;
-  checkCreateJSON(dir, []);
+  checkCreateJSON<Subreddit[]>(dir, []);
+  return dir;
+};
+
+export const getHistoryPath = (): string => {
+  const dir = getPath() + historyJSON;
+  checkCreateJSON<PostHistory>(dir, []);
   return dir;
 };
 
@@ -30,6 +37,14 @@ export const setConfig = (creds: Credentials): void => {
 
 export const getCredentials = (): Credentials => {
   return fs.readJSONSync(getPath() + configJSON) as Credentials;
+};
+
+export const getHistory = (): PostHistory => {
+  return fs.readJSONSync(getHistoryPath()) as PostHistory;
+};
+
+export const setHistory = (history: PostHistory): void => {
+  fs.writeJSONSync(getHistoryPath(), history);
 };
 
 export const getSubredditsList = async (): Promise<Subreddit[]> => {

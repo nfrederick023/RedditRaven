@@ -193,16 +193,6 @@ export const submitImagePost = async (postRequest: SubmitRequest): Promise<strin
     allLeaseItems.forEach(item => formdata.append(item.name, item.value));
     formdata.append("file", imageData);
 
-    // FUCK NODE FETCH!!
-    // FUCK NODE FETCH!!
-    // FUCK NODE FETCH!!
-    // FUCK NODE FETCH!!
-    // FUCK NODE FETCH!!
-    // FUCK NODE FETCH!!
-
-    // I WASTED 15 HOURS ON THIS STUPID SHIT
-
-    // FUCK YOU NODE FETCH!!!!!!!!!!!!
     await axios({
       method: "POST",
       url: uploadURL,
