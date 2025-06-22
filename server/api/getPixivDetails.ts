@@ -1,13 +1,12 @@
 
 import { PixivDetails, PixivTag, SuggestedImages } from "@client/utils/types";
-import axios, { AxiosError, AxiosHeaders, AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from "axios";
+import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from "axios";
 
 import * as http from "http";
 import * as https from "https";
 
+import { getCredentials } from "@server/utils/config";
 import CacheableLookup from "cacheable-lookup";
-
-let pixivHeader: RawAxiosRequestHeaders | AxiosHeaders | undefined;
 
 if (process.env.HAS_LOADED !== "true") {
   const cacheable = new CacheableLookup();
@@ -74,14 +73,17 @@ export interface PixivIllustDetails {
 }
 
 const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
-  if (!pixivID) {
+  const headers = await getHeader();
+
+
+  if (!pixivID || !headers) {
     return undefined;
   }
 
   try {
     const response = await axios("https://www.pixiv.net/ajax/illust/" + pixivID, {
       method: "GET",
-      headers: pixivHeader
+      headers
     });
 
     if (response.status === 200)
@@ -200,45 +202,58 @@ export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined
   }
 };
 
-export const getPixivIllustrations = async (tagName: string, page: number, slice: number, count: number, token: string): Promise<SuggestedImages | undefined> => {
+export const getPixivIllustrations = async (tagName: string, page: number, slice: number, count: number): Promise<SuggestedImages | undefined> => {
   // change mode for R18, all, or all ages
   const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + (page + 1) + "&s_mode=s_tag_full";
-  const params: AxiosRequestConfig = {
-    method: "GET",
-    headers: { "accept-language": "en-US", cookie: `PHPSESSID=${token};`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" },
-  };
+  const headers = await getHeader();
+
+  if (headers) {
+    const params: AxiosRequestConfig = {
+      method: "GET",
+      headers
+    };
+
+    try {
+      const response = await axios<PixivIllustSearch>(searchURL, params);
+      if (response.status === 200 && response.data.body.illust.data) {
+        const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
+        const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
+        const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
+          const res = await loadImage(image.mediumImageLink);
+          if (res) {
+            image.imageBlob = Buffer.from(res.data).toString("base64");
+          }
+          return image;
+        }));
+
+        return { suggestedImages };
+      }
+    } catch (e) {
+      return undefined;
+    }
+
+  }
+
+  return undefined;
+};
+
+const getHeader = async (): Promise<RawAxiosRequestHeaders | AxiosHeaders | undefined> => {
+  const token = getCredentials().PIXIV_TOKEN;
+  const header: RawAxiosRequestHeaders | AxiosHeaders = { "accept-language": "en-US", cookie: `PHPSESSID=${token}; `, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" };
 
   try {
-    await axios<PixivIllustSearch>(searchURL, params);
+    await axios<PixivIllustSearch>("https://www.pixiv.net/ajax/street/access", { method: "GET", headers: header });
   } catch (e) {
     if (axios.isAxiosError(e)) {
-      pixivHeader = { "accept-language": "en-US", cookie: `PHPSESSID=${token};`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" };
       e.response?.headers["set-cookie"]?.forEach(rawCookie => {
         const cookie = rawCookie.split("path=/;")?.[0].trim();
-        if (pixivHeader)
-          pixivHeader.cookie = pixivHeader.cookie + cookie;
+        header.cookie = header.cookie + cookie + " ";
       });
     }
+
+    console.log(header);
+    return header;
   }
 
-  params.headers = pixivHeader;
-
-  try {
-    const response = await axios<PixivIllustSearch>(searchURL, params);
-    if (response.status === 200 && response.data.body.illust.data) {
-      const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
-      const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
-      const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
-        const res = await loadImage(image.mediumImageLink);
-        if (res) {
-          image.imageBlob = Buffer.from(res.data).toString("base64");
-        }
-        return image;
-      }));
-
-      return { suggestedImages };
-    }
-  } catch (e) {
-    return undefined;
-  }
+  return undefined;
 };

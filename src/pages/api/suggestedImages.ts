@@ -6,7 +6,6 @@ import { getPixivIllustrations } from "@server/api/getPixivDetails";
 
 
 const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
-  const creds = getCredentials();
   if (!(checkHashedPassword(req.cookies.authToken ?? ""))) {
     res.statusCode = 401;
     res.end(JSON.stringify("Unauthorized"));
@@ -45,15 +44,12 @@ const suggestedImages = async (req: NextApiRequest, res: NextApiResponse): Promi
     return;
   }
 
-  let token = body.token;
 
-  if (!token) {
-    token = creds.PIXIV_TOKEN;
-  } else {
-    setConfig({ ...creds, PIXIV_TOKEN: token });
+  if (body.token) {
+    setConfig({ ...getCredentials(), PIXIV_TOKEN: body.token });
   }
 
-  const suggestedImages = await getPixivIllustrations(body.pixivTag.jpName, Number(body.page), body.slice, body.count, token);
+  const suggestedImages = await getPixivIllustrations(body.pixivTag.jpName, Number(body.page), body.slice, body.count);
 
   if (!suggestedImages) {
     res.status(500).json({ message: "Failed to get Pixiv Tag Suggested Images!" });
