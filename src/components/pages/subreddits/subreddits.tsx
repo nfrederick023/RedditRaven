@@ -3,7 +3,6 @@ import Gradient from "@client/components/common/shared/gradient";
 import React, { FC, useState } from "react";
 import Select from "@client/components/common/shared/select";
 import SubredditsSearch from "@client/components/common/subreddits-search/subreddits-search";
-import TextArea from "@client/components/common/shared/text-area";
 import TextField from "@client/components/common/shared/text-field";
 import styled from "styled-components";
 
@@ -34,12 +33,6 @@ const SearchResult = styled.div`
   div {
     margin-right: 5px;
   }
-`;
-
-const CommentWrapper = styled.div`
-  width: 100%;
-  height: 5em;
-  margin-top: 5px;
 `;
 
 const NewSubredditTitle = styled.div`
@@ -270,22 +263,6 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
     }
   };
 
-  const handleNoteChange = (notes: string): void => {
-    if (typeof selectedIndex !== "undefined") {
-      const newSubredditList = [...subredditList];
-      newSubredditList[selectedIndex].notes = notes;
-      setSubredditList(newSubredditList);
-    }
-  };
-
-  const handleClearNotes = (): void => {
-    if (typeof selectedIndex !== "undefined") {
-      const newSubredditList = [...subredditList];
-      newSubredditList[selectedIndex].notes = "";
-      setSubredditList(newSubredditList);
-    }
-  };
-
   const handleCreateCategoryChange = (categoryName: string): void => {
     setCategoryField(categoryName);
   };
@@ -337,23 +314,6 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
       );
       setSubredditList(newSubredditList);
       setDeletePixivTag("");
-    }
-  };
-
-  const handleTagTitleChange = (newTagTitle: string): void => {
-    if (typeof selectedIndex !== "undefined") {
-      const newSubredditList = [...subredditList];
-      const selectedSubreddit = newSubredditList[selectedIndex];
-
-      if (selectedSubreddit.defaults.pixivTag?.enName === deletePixivTag)
-        selectedSubreddit.defaults.pixivTag = { ...selectedSubreddit.defaults.pixivTag, title: newTagTitle };
-      selectedSubreddit.pivixTags = selectedSubreddit.pivixTags.map((tag) => {
-        if (tag.enName === deletePixivTag) {
-          tag.title = newTagTitle;
-        }
-        return tag;
-      });
-      setSubredditList(newSubredditList);
     }
   };
 
@@ -525,7 +485,7 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
           <ButtonBase>
             <Button onClick={handleReIndex}>Re-Index Subreddit</Button>
           </ButtonBase>
-          <EditHeader>DEFAULTS</EditHeader>
+          <EditHeader>GENERAL</EditHeader>
           <FlexWrapper>
             <InputText>
               <ButtonBase>Flair:</ButtonBase>
@@ -578,6 +538,14 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
               />
             </InputFields>
           </FlexWrapper>
+          <FlexWrapper>
+            <InputText>
+              <Button onClick={handleCancel}>Cancel</Button>
+            </InputText>
+            <InputText>
+              <Button onClick={handleResetSelected}>Reset To Default</Button>
+            </InputText>
+          </FlexWrapper>
           <EditHeader>CATEGORIES</EditHeader>
           <InputFields>
             <Select
@@ -624,37 +592,9 @@ const SubredditsPage: FC<SubredditsPageProps> = ({ subreddits }: SubredditsPageP
                 value={deletePixivTag}
               />
             </InputFields>
-          </FlexWrapper>
-          <FlexWrapper>
-            <InputText>
-              <ButtonBase>Title:</ButtonBase>
-            </InputText>
-            <InputFields>
-              <TextField
-                onChange={handleTagTitleChange}
-                value={selectedSubreddit.pivixTags.find((tag) => tag.enName === deletePixivTag)?.title ?? ""}
-                placeholder="Tag Title"
-              />
-            </InputFields>
             <ButtonBase>
               <Button onClick={handleDeletePixivTag}>Delete Tag</Button>
             </ButtonBase>
-          </FlexWrapper>
-
-          <EditHeader>NOTES</EditHeader>
-          <CommentWrapper>
-            <TextArea onChange={handleNoteChange} value={selectedSubreddit.notes} placeholder={"Notes..."} />
-          </CommentWrapper>
-          <InputFields>
-            <Icon onClick={handleClearNotes}>Clear Notes</Icon>
-          </InputFields>
-          <FlexWrapper>
-            <InputText>
-              <Button onClick={handleCancel}>Cancel</Button>
-            </InputText>
-            <InputText>
-              <Button onClick={handleResetSelected}>Reset To Default</Button>
-            </InputText>
           </FlexWrapper>
           <EditHeader>PAGE</EditHeader>
           <FlexWrapper>

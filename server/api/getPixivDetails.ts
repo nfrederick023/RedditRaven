@@ -1,11 +1,13 @@
 
 import { PixivDetails, PixivTag, SuggestedImages } from "@client/utils/types";
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosHeaders, AxiosRequestConfig, AxiosResponse, RawAxiosRequestHeaders } from "axios";
 
 import * as http from "http";
 import * as https from "https";
 
 import CacheableLookup from "cacheable-lookup";
+
+let pixivHeader: RawAxiosRequestHeaders | AxiosHeaders | undefined;
 
 if (process.env.HAS_LOADED !== "true") {
   const cacheable = new CacheableLookup();
@@ -72,9 +74,14 @@ export interface PixivIllustDetails {
 }
 
 const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
+  if (!pixivID) {
+    return undefined;
+  }
+
   try {
     const response = await axios("https://www.pixiv.net/ajax/illust/" + pixivID, {
       method: "GET",
+      headers: pixivHeader
     });
 
     if (response.status === 200)
@@ -128,7 +135,12 @@ export const getImageLink = async (pixivID: string, frame: string): Promise<Pixi
       smallImageLink = smallImageLink.split("_p0")[0] + "_p" + frame + smallImageLink.split("_p0")[1];
     }
 
-    const text = smallImageLink.split(pixivID)[1].split("_");
+    const text = smallImageLink.split(pixivID)[1]?.split("_");
+
+    if (!text) {
+      return undefined;
+    }
+
     text.pop();
     let mediumImageLink = "https://i.pximg.net/c/540x540_70/img-master/img/" + smallImageLink.split("/img/")[1].split(pixivID)[0] + pixivID + text.join("_") + "_master1200" + ".jpg";
 
@@ -190,24 +202,43 @@ export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined
 
 export const getPixivIllustrations = async (tagName: string, page: number, slice: number, count: number, token: string): Promise<SuggestedImages | undefined> => {
   // change mode for R18, all, or all ages
-  const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + (page + 1) + "&s_mode=s_tag_full&lang=en&version=82d3db204a8e8b7e2f627b893751c3cc6ef300fb";
-
-  const response = await axios<PixivIllustSearch>(searchURL, {
+  const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + (page + 1) + "&s_mode=s_tag_full";
+  const params: AxiosRequestConfig = {
     method: "GET",
-    headers: { "accept-language": "en-US", cookie: `PHPSESSID=${token}`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" },
-  });
+    headers: { "accept-language": "en-US", cookie: `PHPSESSID=${token};`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" },
+  };
 
-  if (response.status === 200) {
-    const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
-    const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
-    const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
-      const res = await loadImage(image.mediumImageLink);
-      if (res) {
-        image.imageBlob = Buffer.from(res.data).toString("base64");
-      }
-      return image;
-    }));
+  try {
+    await axios<PixivIllustSearch>(searchURL, params);
+  } catch (e) {
+    if (axios.isAxiosError(e)) {
+      pixivHeader = { "accept-language": "en-US", cookie: `PHPSESSID=${token};`, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" };
+      e.response?.headers["set-cookie"]?.forEach(rawCookie => {
+        const cookie = rawCookie.split("path=/;")?.[0].trim();
+        if (pixivHeader)
+          pixivHeader.cookie = pixivHeader.cookie + cookie;
+      });
+    }
+  }
 
-    return { suggestedImages };
+  params.headers = pixivHeader;
+
+  try {
+    const response = await axios<PixivIllustSearch>(searchURL, params);
+    if (response.status === 200 && response.data.body.illust.data) {
+      const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
+      const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
+      const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
+        const res = await loadImage(image.mediumImageLink);
+        if (res) {
+          image.imageBlob = Buffer.from(res.data).toString("base64");
+        }
+        return image;
+      }));
+
+      return { suggestedImages };
+    }
+  } catch (e) {
+    return undefined;
   }
 };

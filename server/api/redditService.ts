@@ -89,7 +89,7 @@ const getReddit = async <T>(url: string): Promise<T> => {
   return (await axios.get<T>(redditBaseURL + url, { headers: { Authorization: "bearer " + token, "User-Agent": userAgent } })).data;
 };
 
-const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
+const postReddit = async <T, D>(url: string, req: D, baseURL?: string): Promise<T> => {
   const token = await getAccessToken();
   const formData = new FormData();
   for (const key in req) {
@@ -105,7 +105,10 @@ const postReddit = async <T, D>(url: string, req: D): Promise<T> => {
       }
     }
   }
-  const res = await axios.post<T>(redditBaseURL + url, formData, { headers: { Authorization: "bearer " + token, "User-Agent": userAgent } });
+
+  const base = baseURL ? baseURL : redditBaseURL;
+
+  const res = await axios.post<T>(base + url, formData, { headers: { Authorization: "bearer " + token, "User-Agent": userAgent } });
   return res.data;
 };
 
