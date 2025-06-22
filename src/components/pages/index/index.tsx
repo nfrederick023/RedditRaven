@@ -503,11 +503,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
         }
       }
 
-      // if the link is blank, get the regular results
-      // else check if the link return valid resuts
-      if (newLink === "") {
-        goToPage(postToUpdate, postToUpdate.subreddit.currentPage)();
-      } else if (pixivDetails) {
+      if (newLink !== "" && pixivDetails) {
         const parsedArtistName = pixivDetails.artist.split("@")[0];
         const defaultTitle = postToUpdate.subreddit.defaults.title;
         let title = "";
@@ -525,18 +521,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
               post.selectedImage = pixivDetails;
               post.suggestedImages = [pixivDetails];
               post.title = title;
-              post.isLoading = false;
-            }
-            return post;
-          })
-        );
-      } else {
-        // if we somehow get here, show nothing
-        setPosts(
-          posts.map((post) => {
-            if (post.subreddit.name === postToUpdate.subreddit.name) {
-              post.selectedImage = undefined;
-              post.suggestedImages = [];
               post.isLoading = false;
             }
             return post;
@@ -769,12 +753,10 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           try {
             json = await res.json();
           } catch (e) {
-            //console.log(e);
+            //
           }
           if (json && json.errors) {
             failedPosts.push(...json.errors);
-          } else {
-            //isUnknownInternalServerError = true;
           }
         }
       }
@@ -789,8 +771,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
                 failedPost.subredditName + ": " + failedPost.error + "\n."
             )
         );
-        // eslint-disable-next-line no-console
-        console.error();
       }
 
       if (isUnknownInternalServerError) {

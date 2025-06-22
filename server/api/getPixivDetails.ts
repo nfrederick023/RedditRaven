@@ -72,8 +72,8 @@ export interface PixivIllustDetails {
   body: LimitedIllustrationDetails;
 }
 
-const getIllustrationData = async (pixivID: string): Promise<PixivIllustDetails | undefined> => {
-  const headers = await getHeader();
+const getIllustrationData = async (pixivID: string, header?: RawAxiosRequestHeaders | AxiosHeaders): Promise<PixivIllustDetails | undefined> => {
+  const headers = header ? header : await getHeader();
 
 
   if (!pixivID || !headers) {
@@ -126,9 +126,9 @@ export const loadImage = async (url: string): Promise<AxiosResponse | undefined>
   }
 };
 
-export const getImageLink = async (pixivID: string, frame: string): Promise<PixivDetails | undefined> => {
+export const getImageLink = async (pixivID: string, frame: string, headers?: RawAxiosRequestHeaders | AxiosHeaders): Promise<PixivDetails | undefined> => {
 
-  const res = await getIllustrationData(pixivID);
+  const res = await getIllustrationData(pixivID, headers);
 
   if (res) {
     let smallImageLink = res.body.userIllusts[pixivID].url;
@@ -215,8 +215,26 @@ export const getPixivIllustrations = async (tagName: string, page: number, slice
 
     try {
       const response = await axios<PixivIllustSearch>(searchURL, params);
-      if (response.status === 200 && response.data.body.illust.data) {
-        const unfilteredIllustations = await Promise.all(response.data.body.illust.data.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }));
+      const illustrations = response.data.body.illust.data;
+
+      if (response.status === 200 && illustrations) {
+        let unfilteredIllustations: (PixivDetails | undefined)[] = [];
+        const batchCount = 10;
+        const batchArray = [];
+
+        for (let i = 0; i < illustrations.length; i += batchCount) {
+          batchArray.push(illustrations.slice(i, i + batchCount));
+        }
+
+        for (const batch of batchArray) {
+          unfilteredIllustations = [...unfilteredIllustations, ...await Promise.all(batch.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }))];
+          await new Promise<void>((res) => {
+            setTimeout(() => {
+              res();
+            }, 15000);
+          });
+
+        }
         const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
         const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
           const res = await loadImage(image.mediumImageLink);
@@ -239,7 +257,7 @@ export const getPixivIllustrations = async (tagName: string, page: number, slice
 
 const getHeader = async (): Promise<RawAxiosRequestHeaders | AxiosHeaders | undefined> => {
   const token = getCredentials().PIXIV_TOKEN;
-  const header: RawAxiosRequestHeaders | AxiosHeaders = { "accept-language": "en-US", cookie: `PHPSESSID=${token}; `, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" };
+  const header: RawAxiosRequestHeaders | AxiosHeaders = { "accept-language": "en-US", cookie: `PHPSESSID=${token}; `, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" };
 
   try {
     await axios<PixivIllustSearch>("https://www.pixiv.net/ajax/street/access", { method: "GET", headers: header });
@@ -251,7 +269,6 @@ const getHeader = async (): Promise<RawAxiosRequestHeaders | AxiosHeaders | unde
       });
     }
 
-    console.log(header);
     return header;
   }
 
