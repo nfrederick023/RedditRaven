@@ -5,7 +5,7 @@ import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, RawAxiosRequest
 import * as http from "http";
 import * as https from "https";
 
-import { getCredentials } from "@server/utils/config";
+import { getCredentials, getImageDatabase, setImageDatabase } from "@server/utils/config";
 import CacheableLookup from "cacheable-lookup";
 
 if (process.env.HAS_LOADED !== "true") {
@@ -72,9 +72,7 @@ export interface PixivIllustDetails {
   body: LimitedIllustrationDetails;
 }
 
-const getIllustrationData = async (pixivID: string, header?: RawAxiosRequestHeaders | AxiosHeaders): Promise<PixivIllustDetails | undefined> => {
-  const headers = header ? header : await getHeader();
-
+const getIllustrationData = async (pixivID: string, headers?: RawAxiosRequestHeaders | AxiosHeaders): Promise<PixivIllustDetails | undefined> => {
 
   if (!pixivID || !headers) {
     return undefined;
@@ -204,8 +202,9 @@ export const getPixivTag = async (tagName: string): Promise<PixivTag | undefined
 
 export const getPixivIllustrations = async (tagName: string, page: number, slice: number, count: number): Promise<SuggestedImages | undefined> => {
   // change mode for R18, all, or all ages
-  const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + (page + 1) + "&s_mode=s_tag_full";
+  const searchURL = "https://www.pixiv.net/ajax/search/illustrations/" + tagName + "?order=date_d&mode=safe&p=" + (page + 1) + "&s_mode=s_tag_full&ai_type=1";
   const headers = await getHeader();
+  const imageDatabase = await getImageDatabase();
 
   if (headers) {
     const params: AxiosRequestConfig = {
@@ -218,33 +217,36 @@ export const getPixivIllustrations = async (tagName: string, page: number, slice
       const illustrations = response.data.body.illust.data;
 
       if (response.status === 200 && illustrations) {
-        let unfilteredIllustations: (PixivDetails | undefined)[] = [];
-        const batchCount = 10;
-        const batchArray = [];
+        const suggestedImages: PixivDetails[] = [];
 
-        for (let i = 0; i < illustrations.length; i += batchCount) {
-          batchArray.push(illustrations.slice(i, i + batchCount));
-        }
+        for (const illust of illustrations) {
+          const matchingImage = imageDatabase.find(image => image.pixivID === illust.id);
+          if (matchingImage && matchingImage.imageBlob) {
+            suggestedImages.push(matchingImage);
+          } else {
+            const newImage = await getImageLink(illust.id, "0", headers);
 
-        for (const batch of batchArray) {
-          unfilteredIllustations = [...unfilteredIllustations, ...await Promise.all(batch.map(async illustration => { if (illustration.aiType !== 2) return getImageLink(illustration.id, "0"); }))];
-          await new Promise<void>((res) => {
-            setTimeout(() => {
-              res();
-            }, 15000);
-          });
+            if (newImage) {
+              const res = await loadImage(newImage.mediumImageLink);
+              if (res) {
+                newImage.imageBlob = Buffer.from(res.data).toString("base64");
+                suggestedImages.push(newImage);
+                imageDatabase.push(newImage);
 
-        }
-        const illusts: PixivDetails[] = unfilteredIllustations.filter((promise) => promise) as PixivDetails[];
-        const suggestedImages = await Promise.all(illusts.sort((a, b) => b.likeCount - a.likeCount).slice(0, 40).map(async image => {
-          const res = await loadImage(image.mediumImageLink);
-          if (res) {
-            image.imageBlob = Buffer.from(res.data).toString("base64");
+                // try to prevent rate limiting
+                await new Promise<void>((res) => {
+                  setTimeout(() => {
+                    res();
+                  }, 1000);
+                });
+              }
+            }
           }
-          return image;
-        }));
+        }
 
-        return { suggestedImages };
+        setImageDatabase(imageDatabase);
+
+        return { suggestedImages: suggestedImages.sort((a, b) => b.likeCount - a.likeCount) };
       }
     } catch (e) {
       return undefined;
@@ -259,6 +261,7 @@ const getHeader = async (): Promise<RawAxiosRequestHeaders | AxiosHeaders | unde
   const token = getCredentials().PIXIV_TOKEN;
   const header: RawAxiosRequestHeaders | AxiosHeaders = { "accept-language": "en-US", cookie: `PHPSESSID=${token}; `, "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" };
 
+  // I'm getting an error sometimes when I don't have certain headers (namely cfuvid). I don't know what that is, but this is a way to get that header. 
   try {
     await axios<PixivIllustSearch>("https://www.pixiv.net/ajax/street/access", { method: "GET", headers: header });
   } catch (e) {

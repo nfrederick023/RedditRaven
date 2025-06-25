@@ -359,12 +359,6 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
           }
         }),
       ]);
-
-      await new Promise<void>((res) => {
-        setTimeout(() => {
-          res();
-        }, 3000);
-      });
     }
   };
 

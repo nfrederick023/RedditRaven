@@ -1,4 +1,4 @@
-import { Credentials, PostHistory, Subreddit } from "../../src/utils/types";
+import { Credentials, PixivDetails, PostHistory, Subreddit } from "../../src/utils/types";
 import { getFlairsBySubbreddit, getSubbredditAbout } from "@server/api/redditService";
 import fs from "fs-extra";
 
@@ -6,6 +6,7 @@ const mainDir = "data/redditraven";
 const configJSON = "config.json";
 const historyJSON = "history.json";
 const subredditJSON = "subreddit_list.json";
+const imageDatabase = "imageDatabase.json";
 
 export const getPath = (): string => {
   const dir = `/${mainDir}/`;
@@ -13,7 +14,6 @@ export const getPath = (): string => {
     return checkCreateDir(dir);
   throw ("Required: \"path\" configuration property not found!");
 };
-
 
 export const getSubredditsListPath = (): string => {
   const dir = getPath() + subredditJSON;
@@ -24,6 +24,12 @@ export const getSubredditsListPath = (): string => {
 export const getHistoryPath = (): string => {
   const dir = getPath() + historyJSON;
   checkCreateJSON<PostHistory>(dir, []);
+  return dir;
+};
+
+export const getImageDatabasePath = (): string => {
+  const dir = getPath() + imageDatabase;
+  checkCreateJSON<PixivDetails[]>(dir, []);
   return dir;
 };
 
@@ -45,6 +51,14 @@ export const getHistory = (): PostHistory => {
 
 export const setHistory = (history: PostHistory): void => {
   fs.writeJSONSync(getHistoryPath(), history);
+};
+
+export const getImageDatabase = (): PixivDetails[] => {
+  return fs.readJSONSync(getImageDatabasePath()) as PixivDetails[];
+};
+
+export const setImageDatabase = (imageDatabase: PixivDetails[]): void => {
+  fs.writeJSONSync(getImageDatabasePath(), imageDatabase);
 };
 
 export const getSubredditsList = async (): Promise<Subreddit[]> => {
