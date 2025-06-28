@@ -390,13 +390,27 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
     if (illustrations) {
       const suggestedImages: PixivDetails[] = [];
+      const concurrencyLimit = 3;
+      let index = 0;
 
-      for (const illustration of illustrations) {
-        const image = await getImage(illustration.id);
+      const processBatch = async (): Promise<void> => {
+        const batch = illustrations.slice(index, index + concurrencyLimit);
+        index += concurrencyLimit;
 
-        if (image) {
-          suggestedImages.push(image);
+        const results = await Promise.all(
+          batch.map(async (illustration) => {
+            const image = await getImage(illustration.id);
+            return image;
+          })
+        );
+
+        for (const image of results) {
+          if (image) suggestedImages.push(image);
         }
+      };
+
+      while (index < illustrations.length) {
+        await processBatch();
       }
 
       return suggestedImages.sort((a, b) => b.likeCount - a.likeCount);
