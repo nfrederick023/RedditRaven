@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { checkHashedPassword } from "@server/utils/auth";
-import { getHistory, setHistory } from "@server/utils/config";
+import { getHistory } from "@server/utils/config";
 
 const history = async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
 

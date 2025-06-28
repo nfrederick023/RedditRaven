@@ -5,10 +5,9 @@ import {
   PostHistory,
   SubmissionErrors,
   Subreddit,
-  SuggestedImages,
   SuggestedImagesReq,
 } from "@client/utils/types";
-import PromisePool from "async-promise-pool";
+import { PixivIllustID } from "@server/api/getPixivDetails";
 import React, { FC, useEffect, useRef, useState } from "react";
 import ScrollContainer from "react-indiana-drag-scroll";
 import Select from "@client/components/common/shared/select";
@@ -257,17 +256,24 @@ const ShownImage = styled.img`
   box-shadow: 0 0 25px ${(p): string => p.theme.text};
 `;
 
-const pool = new PromisePool({ concurrency: 15 });
-
 const getSuggestedImages = async (
   suggestedImagesReq: SuggestedImagesReq
-): Promise<SuggestedImages | undefined> => {
+): Promise<PixivIllustID[] | undefined> => {
   const response = await fetch("/api/suggestedImages", {
     method: "POST",
     body: JSON.stringify(suggestedImagesReq),
   });
   if (response.ok) {
-    return (await response.json()) as SuggestedImages;
+    return (await response.json()) as PixivIllustID[];
+  }
+};
+
+const getImage = async (id: string): Promise<PixivDetails | undefined> => {
+  const response = await fetch(
+    "/api/loadLink?" + new URLSearchParams({ id }).toString()
+  );
+  if (response.ok) {
+    return (await response.json()) as PixivDetails;
   }
 };
 
@@ -380,8 +386,23 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
       count: 5,
     };
 
-    const res = await getSuggestedImages(body);
-    return res?.suggestedImages ?? [];
+    const illustrations = await getSuggestedImages(body);
+
+    if (illustrations) {
+      const suggestedImages: PixivDetails[] = [];
+
+      for (const illustration of illustrations) {
+        const image = await getImage(illustration.id);
+
+        if (image) {
+          suggestedImages.push(image);
+        }
+      }
+
+      return suggestedImages.sort((a, b) => b.likeCount - a.likeCount);
+    }
+
+    return [];
   };
 
   const getNewSlice = async (
@@ -520,6 +541,8 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
             return post;
           })
         );
+      } else {
+        goToPage(postToUpdate, postToUpdate.subreddit.currentPage)();
       }
     };
   };
