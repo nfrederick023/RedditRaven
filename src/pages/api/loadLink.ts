@@ -24,7 +24,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
 
   try {
 
-    if (typeof id === "string") {
+    if (typeof id === "object") {
       const response = await getImage(id);
       if (response) {
         res.json(response);

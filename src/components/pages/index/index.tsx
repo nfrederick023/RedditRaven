@@ -268,12 +268,12 @@ const getSuggestedImages = async (
   }
 };
 
-const getImage = async (id: string): Promise<PixivDetails | undefined> => {
+const getImage = async (ids: string[]): Promise<PixivDetails[] | undefined> => {
   const response = await fetch(
-    "/api/loadLink?" + new URLSearchParams({ id }).toString()
+    "/api/loadLink?" + new URLSearchParams(ids.map(s=>['id',s])).toString()
   );
   if (response.ok) {
-    return (await response.json()) as PixivDetails;
+    return (await response.json()) as PixivDetails[];
   }
 };
 
@@ -390,27 +390,18 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
     if (illustrations) {
       const suggestedImages: PixivDetails[] = [];
-      const concurrencyLimit = 3;
+      const concurrencyLimit = 10;
       let index = 0;
 
-      const processBatch = async (): Promise<void> => {
-        const batch = illustrations.slice(index, index + concurrencyLimit);
+      while (index < illustrations.length) {
+        const images = await getImage(illustrations.slice(index, index + concurrencyLimit).map(illustration => illustration.id ));
         index += concurrencyLimit;
 
-        const results = await Promise.all(
-          batch.map(async (illustration) => {
-            const image = await getImage(illustration.id);
-            return image;
-          })
-        );
-
-        for (const image of results) {
-          if (image) suggestedImages.push(image);
+        if (images?.length){
+          for (const image of images) {
+            suggestedImages.push(image);
+          }
         }
-      };
-
-      while (index < illustrations.length) {
-        await processBatch();
       }
 
       return suggestedImages.sort((a, b) => b.likeCount - a.likeCount);

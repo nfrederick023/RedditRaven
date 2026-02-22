@@ -215,25 +215,32 @@ export const getPixivIllustrations = async (tagName: string, page: number): Prom
   return undefined;
 };
 
-export const getImage = async (id: string): Promise<PixivDetails | undefined> => {
-  const imageDatabase = await getImageDatabase();
-  const matchingImage = imageDatabase.find(image => image.pixivID === id);
-  if (matchingImage && matchingImage.imageBlob) {
-    return matchingImage;
-  } else {
-    const newImage = await getImageLink(id, "0");
-    const imageDatabase = await getImageDatabase();
+export const getImage = async (ids: string[]): Promise<PixivDetails[] | undefined> => {
+  const imageDatabase = getImageDatabase();
+  const matchingImages = imageDatabase.filter(image => ids.includes(image.pixivID));
 
-    if (newImage) {
-      const res = await loadImage(newImage.mediumImageLink);
-      if (res) {
-        newImage.imageBlob = Buffer.from(res.data).toString("base64");
-        imageDatabase.push(newImage);
-      }
-    }
+  if(matchingImages.length === ids.length){
+    return matchingImages;
+  } else {
+
+    const notCachedIds = ids.filter(id => !matchingImages.find(image => image.pixivID === id));
+    await Promise.all(notCachedIds.map(async(id) => {
+          const newImage = await getImageLink(id, "0");
+
+          if (newImage) {
+            const res = await loadImage(newImage.mediumImageLink);
+            if (res) {
+              newImage.imageBlob = Buffer.from(res.data).toString("base64");
+              imageDatabase.push(newImage);
+              matchingImages.push(newImage);
+            }
+          }
+        }
+      )
+    )
 
     setImageDatabase(imageDatabase);
-    return newImage;
+    return matchingImages;
   }
 };
 
