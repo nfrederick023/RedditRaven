@@ -270,7 +270,7 @@ const getSuggestedImages = async (
 
 const getImage = async (ids: string[]): Promise<PixivDetails[] | undefined> => {
   const response = await fetch(
-    "/api/loadLink?" + new URLSearchParams(ids.map(s=>['id',s])).toString()
+    "/api/loadLink?" + new URLSearchParams(ids.map(s=>["id",s])).toString()
   );
   if (response.ok) {
     return (await response.json()) as PixivDetails[];
@@ -390,7 +390,7 @@ const IndexPage: FC<IndexPageProps> = ({ subreddits }: IndexPageProps) => {
 
     if (illustrations) {
       const suggestedImages: PixivDetails[] = [];
-      const concurrencyLimit = 10;
+      const concurrencyLimit = 5;
       let index = 0;
 
       while (index < illustrations.length) {
